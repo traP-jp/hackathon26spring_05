@@ -4,5 +4,5 @@
 
 - Arina
 - hiko9907
-- watapro26B
+- watapro26B backend
 - tidus
