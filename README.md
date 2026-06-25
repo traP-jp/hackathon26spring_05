@@ -15,5 +15,10 @@
 npm run dev
 ```
 
+立ち上がる先
+```
+http://localhost:8080/
+```
+
 その後中止する
 ctrl+C
