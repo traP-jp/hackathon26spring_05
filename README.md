@@ -6,3 +6,5 @@
 - hiko9907
 - watapro26B
 - tidus
+- genMira
+- eoa_te
