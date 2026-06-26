@@ -35,6 +35,8 @@ apt install task
 sudo snap install task --classic
 ```
 
+### Commands
+
 - 初回セットアップ
 
   ```sh
@@ -43,11 +45,11 @@ sudo snap install task --classic
 
 - ローカル環境で起動
 
+  変更を保存すると自動で再起動されます.
+
   ```sh
   task up
   ```
-
-  変更を保存すると自動で再起動されます.
   
 - ローカル環境を停止
 
@@ -56,3 +58,7 @@ sudo snap install task --classic
   ```sh
   task down
   ```
+
+### Environment
+
+バックエンドの環境変数は `.env.local` に設定してください. `task init` で自動生成されます.

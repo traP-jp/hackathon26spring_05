@@ -1,10 +1,13 @@
 version: 3
 
+vars:
+  ENV_LOCAL_FILE: .env.local
+
 tasks:
   init:
     cmds:
-      - cmd: cp .env.example .env
-        if: "[ ! -f .env ]"
+      - cmd: cp .env.example {{.ENV_LOCAL_FILE}}
+        if: "[ ! -f {{.ENV_LOCAL_FILE}} ]"
 
   up:
     preconditions:

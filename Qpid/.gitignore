@@ -31,6 +31,8 @@ db/.mysql
 
 # Environment variables
 .env
+.env.*
+!.env.example
 
 # Air temporary files
 tmp/
