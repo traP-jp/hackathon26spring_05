@@ -10,7 +10,7 @@ func Serve() {
 	h := &handler{}
 
 	h.mapRoutes(e)
-	e.Start(":8080")
+	e.Logger.Fatal(e.Start(":8080"))
 }
 
 func (h *handler) mapRoutes(e *echo.Echo) {

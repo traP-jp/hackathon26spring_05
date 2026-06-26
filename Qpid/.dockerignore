@@ -1,2 +1,10 @@
+.git
+.env
+
 # Mounted database directory
 db/.mysql
+
+# Build and runtime artifacts
+tmp/
+*.test
+*.out
