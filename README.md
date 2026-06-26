@@ -1,6 +1,7 @@
 # hackathon26spring_05
 
-## members
+## Members
+
 - genMira
 - Arina
 - hiko9907
@@ -22,3 +23,36 @@ http://localhost:8080/
 
 その後中止する
 ctrl+C
+
+## Backend
+
+タスクランナーの [Taskfile](https://taskfile.dev) があると便利です.
+
+```sh
+# Ubuntu, debian
+apt install task
+# MacOS
+sudo snap install task --classic
+```
+
+- 初回セットアップ
+
+  ```sh
+  task init
+  ```
+
+- ローカル環境で起動
+
+  ```sh
+  task up
+  ```
+
+  変更を保存すると自動で再起動されます.
+  
+- ローカル環境を停止
+
+  これやらないと手元のパソコンで動きっぱなしになります.
+
+  ```sh
+  task down
+  ```

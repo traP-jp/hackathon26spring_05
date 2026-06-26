@@ -1,0 +1,21 @@
+version: 3
+
+tasks:
+  init:
+    cmds:
+      - cmd: cp .env.example .env
+        if: "[ ! -f .env ]"
+
+  up:
+    preconditions:
+      - sh: command -v docker >/dev/null 2>&1
+        msg: Docker is not installed.
+      - sh: command -v go >/dev/null 2>&1
+        msg: Go is not installed.
+    cmds:
+      - go mod tidy
+      - docker compose up --build -d
+
+  down:
+    cmds:
+      - docker compose down

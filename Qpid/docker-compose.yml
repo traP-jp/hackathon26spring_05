@@ -1,0 +1,53 @@
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: dev.Dockerfile
+    ports:
+      - "8080:8080"
+    volumes:
+      - .:/src
+    environment:
+      ENVIRONMENT: development
+    env_file:
+      - .env
+    depends_on:
+      db:
+        condition: service_healthy
+
+  db:
+    image: mariadb:12.3.2@sha256:b1c7bf836e64ed9406a8984af29509f40089d55cea14b32f12c4726a1f17104b
+    volumes:
+      - ./db/init:/docker-entrypoint-initdb.d
+      - ./db/.mysql:/var/lib/mysql
+    environment:
+      MARIADB_DATABASE: $NS_MARIADB_DATABASE
+      MARIADB_PORT: $NS_MARIADB_PORT
+      MARIADB_USER: $NS_MARIADB_USER
+      MARIADB_PASSWORD: $NS_MARIADB_PASSWORD
+      MARIADB_ROOT_PASSWORD: qwerty
+    ports:
+      - "3306:3306"
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "mariadb-admin",
+          "-h",
+          "$NS_MARIADB_HOSTNAME",
+          "-P",
+          "$NS_MARIADB_PORT",
+          "-u",
+          "$NS_MARIADB_USER",
+          "-p$NS_MARIADB_PASSWORD",
+          "ping",
+        ]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 1s
+
+  adminer:
+    image: adminer:5.4.2@sha256:4dae499420bb9ba8c5d73745e5c8e02b696acd214b66b5f2946eceee7f171fee
+    ports:
+      - "8081:8080"
