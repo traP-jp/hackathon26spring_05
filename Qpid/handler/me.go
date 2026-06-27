@@ -1,6 +1,10 @@
 package handler
 
-import "github.com/labstack/echo/v4"
+import (
+	"net/http"
+
+	"github.com/labstack/echo/v4"
+)
 
 // GET /api/me
 func (h *handler) getMe(c echo.Context) error {
@@ -12,9 +16,32 @@ func (h *handler) updateMe(c echo.Context) error {
 	return unauthorized(c)
 }
 
+type userSummary struct {
+	Username string `json:"username"`
+}
+
 // GET /api/me/likes
 func (h *handler) listMyLikes(c echo.Context) error {
-	return unauthorized(c)
+	if !h.loginUserRetriever.IsUserLoggedIn() {
+		return unauthorized(c)
+	}
+
+	username, err := h.loginUserRetriever.GetLoginUser()
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, errorResponse{Message: "failed to get login user"})
+	}
+
+	users, err := h.repository.ListLikedUsers(username)
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, errorResponse{Message: "failed to list liked users"})
+	}
+
+	result := make([]userSummary, len(users))
+	for i, user := range users {
+		result[i] = userSummary{Username: user.Username}
+	}
+
+	return c.JSON(http.StatusOK, result)
 }
 
 // POST /api/me/likes
