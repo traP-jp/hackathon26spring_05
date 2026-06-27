@@ -5,24 +5,25 @@ import (
 	"net/http"
 
 	"github.com/labstack/echo/v4"
+	"github.com/moznion/go-optional"
 	"github.com/traP-jp/hackathon26spring_05/Qpid/domain"
 	"github.com/traP-jp/hackathon26spring_05/Qpid/handler/middleware"
 )
 
 type tag struct {
-	Label    string  `json:"label"`
-	Affinity string  `json:"affinity"`
-	Strength float64 `json:"strength"`
+	Label    optional.Option[string] `json:"label"`
+	Affinity string                  `json:"affinity"`
+	Strength float64                 `json:"strength"`
 }
 
 type meResponse struct {
-	Username     string         `json:"username"`
-	IconFileID   string         `json:"iconFileId"`
-	Major        string         `json:"major"`
-	Affiliations []string       `json:"affiliations"`
-	Hometown     string         `json:"hometown"`
-	Tags         map[string]tag `json:"tags"`
-	Bio          string         `json:"bio"`
+	Username     string                  `json:"username"`
+	IconFileID   optional.Option[string] `json:"iconFileId"`
+	Major        optional.Option[string] `json:"major"`
+	Affiliations []string                `json:"affiliations"`
+	Hometown     optional.Option[string] `json:"hometown"`
+	Tags         map[string]tag          `json:"tags"`
+	Bio          optional.Option[string] `json:"bio"`
 }
 
 // GET /api/me

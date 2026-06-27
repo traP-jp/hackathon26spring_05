@@ -1,8 +1,7 @@
 package mock
 
 import (
-	"time"
-
+	"github.com/moznion/go-optional"
 	"github.com/traP-jp/hackathon26spring_05/Qpid/domain"
 	"github.com/traP-jp/hackathon26spring_05/Qpid/repository"
 )
@@ -100,46 +99,20 @@ func (r *MockRepository) DeleteIcon(username string) error {
 	return nil
 }
 
-// 認証セッションを作成する。
-func (r *MockRepository) CreateAuthSession(sessionID string, session domain.AuthSession) error {
-	return nil
-}
-
-// 認証セッションを取得する。
-func (r *MockRepository) FindAuthSession(sessionID string) (*domain.AuthSession, error) {
-	return &domain.AuthSession{
-		Username:    "mock-user",
-		AccessToken: "mock-access-token",
-		ExpiresAt:   time.Now().Add(time.Hour),
-	}, nil
-}
-
-// 認証セッションを削除する。
-func (r *MockRepository) DeleteAuthSession(sessionID string) error {
-	return nil
-}
-
-// OAuth2 state を作成する。
-func (r *MockRepository) CreateOAuthState(state string, expiresAt time.Time) error {
-	return nil
-}
-
-// OAuth2 state を消費する。
-func (r *MockRepository) ConsumeOAuthState(state string) error {
-	return nil
-}
-
 func mockUser(username string) *domain.User {
 	return &domain.User{
 		Username:     username,
+		IconFileID:   optional.None[string](),
+		Major:        optional.None[string](),
 		Affiliations: []string{"sysad"},
+		Hometown:     optional.None[string](),
 		Tags: map[string]domain.Tag{
 			"go": {
-				Label:    "programmingLanguage",
+				Label:    optional.Some("programmingLanguage"),
 				Affinity: domain.TagAffinityPositive,
 				Strength: 0.8,
 			},
 		},
-		Bio: "mock user",
+		Bio: optional.Some("mock user"),
 	}
 }
