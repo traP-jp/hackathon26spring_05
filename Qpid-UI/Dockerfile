@@ -1,9 +1,10 @@
 FROM node:20-alpine AS builder
 WORKDIR /app
 COPY . .
-RUN cd Qpid-UI && npm ci && npm run build
+
+RUN npm ci && npm run build
 
 FROM nginx:alpine
-COPY --from=builder /app/Qpid-UI/dist /usr/share/nginx/html
+COPY --from=builder /app/dist /usr/share/nginx/html
 EXPOSE 80
 CMD ["nginx", "-g", "daemon off;"]
