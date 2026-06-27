@@ -17,6 +17,7 @@ CREATE INDEX idx_like_topic ON users (like_topic);
 CREATE INDEX idx_like_value ON users (like_value);
 CREATE INDEX idx_dislike_topic ON users (dislike_topic);
 CREATE INDEX idx_dislike_value ON users (dislike_value);
+CREATE INDEX idx_tool ON users (tool);
 
 CREATE TABLE tags (
   username VARCHAR(36) NOT NULL,
@@ -30,12 +31,13 @@ CREATE TABLE actions (
   id VARCHAR(36) NOT NULL,
   from_username VARCHAR(36) NOT NULL,
   to_username VARCHAR(36) NOT NULL,
-  status TINYINT NOT NULL,
+  from_userstatus TINYINT NOT NULL,
+  to_userstatus TINYINT NOT NULL,
   PRIMARY KEY (id),
   CONSTRAINT uq_action UNIQUE (from_username, to_username)
 );
 
-CREATE INDEX idx_action ON actions (from_username, to_username);
+CREATE INDEX idx_userstatus ON actions (from_userstatus,to_userstatus);
 
 CREATE TABLE icons(
   username VARCHAR(36) NOT NULL,
