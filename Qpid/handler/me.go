@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"errors"
 	"net/http"
 
 	"github.com/labstack/echo/v4"
@@ -79,7 +80,7 @@ func toUserSummaryResponses(users []domain.UserSummary) ([]userSummaryResponse, 
 	result := make([]userSummaryResponse, len(users))
 	for i, user := range users {
 		if user.Username == "" {
-			return nil, echo.NewHTTPError(http.StatusInternalServerError, "invalid user summary")
+			return nil, errors.New("invalid user summary")
 		}
 		result[i] = userSummaryResponse{Username: user.Username}
 	}
