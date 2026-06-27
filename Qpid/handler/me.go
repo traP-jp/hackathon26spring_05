@@ -155,5 +155,40 @@ func (h *handler) listUsersWhoLikedMe(c echo.Context) error {
 
 // POST /api/me/nopes
 func (h *handler) nopeUser(c echo.Context) error {
-	return unauthorized(c)
+	loginUserRetriever := middleware.GetLoginUserRetriever(c)
+
+	if !loginUserRetriever.IsUserLoggedIn() {
+		return unauthorized(c)
+	}
+
+	username, err := loginUserRetriever.GetLoginUser()
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, errorResponse{Message: "failed to get login user"})
+	}
+
+	toUser := &userActionRequest{}
+	if err := c.Bind(toUser); err != nil {
+		return c.JSON(http.StatusBadRequest, errorResponse{Message: "invalid request body"})
+	}
+
+	if toUser.Username == "" {
+		return c.JSON(http.StatusBadRequest, errorResponse{Message: "username is required"})
+	}
+	if toUser.Username == username {
+		return c.JSON(http.StatusBadRequest, errorResponse{Message: "cannot nope yourself"})
+	}
+
+	isExist, err := h.repository.Exists(toUser.Username)
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, errorResponse{Message: "failed to check user existence"})
+	}
+	if !isExist {
+		return c.JSON(http.StatusBadRequest, errorResponse{Message: "user does not exist"})
+	}
+
+	if err = h.repository.Nope(username, toUser.Username); err != nil {
+		return c.JSON(http.StatusInternalServerError, errorResponse{Message: "failed to nope user"})
+	}
+
+	return c.NoContent(http.StatusNoContent)
 }
