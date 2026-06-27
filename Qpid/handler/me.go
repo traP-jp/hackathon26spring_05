@@ -115,13 +115,23 @@ func (h *handler) likeUser(c echo.Context) error {
 	}
 
 	toUser := &userActionRequest{}
-	err = c.Bind(toUser)
-	if err != nil {
+	if err := c.Bind(toUser); err != nil {
 		return c.JSON(http.StatusBadRequest, errorResponse{Message: "invalid request body"})
 	}
 
-	err = h.repository.Like(username, toUser.Username)
+	if toUser.Username == "" {
+		return c.JSON(http.StatusBadRequest, errorResponse{Message: "username is required"})
+	}
+
+	isExist, err := h.repository.Exists(toUser.Username)
 	if err != nil {
+		return c.JSON(http.StatusInternalServerError, errorResponse{Message: "failed to check user existence"})
+	}
+	if !isExist {
+		return c.JSON(http.StatusBadRequest, errorResponse{Message: "user does not exist"})
+	}
+
+	if err = h.repository.Like(username, toUser.Username); err != nil {
 		return c.JSON(http.StatusInternalServerError, errorResponse{Message: "failed to like user"})
 	}
 
