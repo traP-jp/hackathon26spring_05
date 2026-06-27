@@ -5,6 +5,7 @@ import (
 
 	"github.com/labstack/echo/v4"
 	"github.com/traP-jp/hackathon26spring_05/Qpid/domain"
+	"github.com/traP-jp/hackathon26spring_05/Qpid/handler/middleware"
 )
 
 type tag struct {
@@ -25,11 +26,13 @@ type meResponse struct {
 
 // GET /api/me
 func (h *handler) getMe(c echo.Context) error {
-	if !h.loginUserRetriever.IsUserLoggedIn() {
+	loginUserRetriever := middleware.GetLoginUserRetriever(c)
+
+	if !loginUserRetriever.IsUserLoggedIn() {
 		return unauthorized(c)
 	}
 
-	username, err := h.loginUserRetriever.GetLoginUser()
+	username, err := loginUserRetriever.GetLoginUser()
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, errorResponse{Message: "failed to get login user"})
 	}
@@ -77,11 +80,13 @@ type userSummaryResponse struct {
 
 // GET /api/me/likes
 func (h *handler) listMyLikes(c echo.Context) error {
-	if !h.loginUserRetriever.IsUserLoggedIn() {
+	loginUserRetriever := middleware.GetLoginUserRetriever(c)
+
+	if !loginUserRetriever.IsUserLoggedIn() {
 		return unauthorized(c)
 	}
 
-	username, err := h.loginUserRetriever.GetLoginUser()
+	username, err := loginUserRetriever.GetLoginUser()
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, errorResponse{Message: "failed to get login user"})
 	}
