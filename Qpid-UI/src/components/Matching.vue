@@ -5,13 +5,14 @@ import 'vue3-toastify/dist/index.css';
 
 // 1. ダミーのユーザーデータ（バックエンドと接続するまでの繋ぎ）
 interface UserProfile {
-  id: number
+  id: string
   name: string
-  avatar: string
   department: string
   faculty: string
   origin: string
+  like_category: string
   like_thing: string
+  dislike_category: string
   dislike_thing: string
   tool: string
   hobby: string
@@ -21,32 +22,34 @@ interface UserProfile {
 
 const dummyUsers: UserProfile[] = [
   {
-    id: 1,
-    name: 'n3',
-    avatar: 'https://q.trap.jp/api/v3/public/icon/n3',
+    id: 'n3',
+    name: 'εИ',
     department: 'algo, game, sysad',
     faculty: '情報理工学院 情報工学系 B2',
     origin: '高知県',
+    like_category: '食べ物',
     like_thing: 'ラーメン',
+    dislike_category: '言語',
     dislike_thing: 'TEX',
     tool: 'Python',
     hobby: '勉学、くねくね、料理',
-    status: 'うんちくおじさん',
+    status: 'オートマトンおじさん',
     bio: 'Pythonはいいぞ！\n最近サウンドを始めました'
   },
   {
-    id: 2,
-    name: 'ゲストユーザー',
-    avatar: 'https://via.placeholder.com/150/ffccd5/333333?text=User2',
-    department: 'web, design',
-    faculty: '工学院 機械系 B1',
+    id: "Suima",
+    name: '睡魔',
+    department: 'all',
+    faculty: '生命理工学院 B2',
     origin: '東京都',
-    like_thing: 'うどん',
-    dislike_thing: '早起き',
-    tool: 'Vue.js',
-    hobby: 'サウナ、散歩',
-    status: 'のんびり屋',
-    bio: 'ハッカソン頑張りましょう！\nフロントエンド担当です。'
+    like_category: '飲み物',
+    like_thing: 'Monster',
+    dislike_category: '言葉',
+    dislike_thing: 'およー',
+    tool: 'Tex',
+    hobby: 'Tex,',
+    status: 'TeXおじさん',
+    bio: 'TeXをやりましょう'
   }
 ]
 
@@ -128,17 +131,32 @@ onUnmounted(() => {
 
 <template>
   <div class="matching-screen">
-    <div v-if="currentUser" class="flexible-stage">  
+    <div 
+      v-if="currentUser" 
+      class="flexible-stage"
+      @mousedown="touchStart"
+      @mousemove="touchMove"
+      @mouseup="touchEnd"
+      @mouseleave="touchEnd"
+      @touchstart="touchStart"
+      @touchmove="touchMove"
+      @touchend="touchEnd"
+      :class="{ 'is-dragging': isDragging }"
+      :style="{ 
+        transform: `translateX(${swipeOffset}px)`, 
+        transition: isDragging ? 'none' : 'transform 0.3s ease' 
+      }"
+    >  
       <div class="absolute-item pos-department">
         <span class="label">所属:</span> {{ currentUser.department }}
+      </div>
+
+      <div class="absolute-item pos-origin">
+        <span class="label">出身:</span> {{ currentUser.origin }}
       </div>
       
       <div class="absolute-item pos-faculty">
         <span class="label">学部/系:</span> {{ currentUser.faculty }}
-      </div>
-      
-      <div class="absolute-item pos-origin">
-        <span class="label">出身:</span> {{ currentUser.origin }}
       </div>
       
       <div class="absolute-item pos-like">
@@ -151,19 +169,11 @@ onUnmounted(() => {
 
       <div 
         class="card-center"
-        :style="{ transform: `translate(-50%, -50%) translateX(${swipeOffset}px)`, transition: isDragging ? 'none' : 'transform 0.3s ease' }"
-        @mousedown="touchStart"
-        @mousemove="touchMove"
-        @mouseup="touchEnd"
-        @mouseleave="touchEnd"
-        @touchstart="touchStart"
-        @touchmove="touchMove"
-        @touchend="touchEnd"
       >
         <div class="avatar-box">
-          <img :src="currentUser.avatar" alt="avatar" class="avatar-img" draggable="false" />
+          <img :src="`https://q.trap.jp/api/v3/public/icon/${currentUser.id}`" alt="avatar" class="avatar-img" draggable="false" />
         </div>
-        <div class="user-name">{{ currentUser.name }}</div>
+        <div class="user-name">{{ currentUser.name }} (@{{currentUser.id}})</div>
       </div>
 
       <div class="absolute-item pos-tool">
@@ -209,14 +219,13 @@ onUnmounted(() => {
   align-items: center;
   width: 100%;
   max-width: 1100px;
-  padding: 20px;
+  padding: 20px 0;
   gap: 40px;
 }
 
 .flexible-stage {
   position: relative; 
   width: 100%;
-  max-width: 1200px;
   height: 600px; 
   background: transparent;
 }
@@ -245,13 +254,13 @@ onUnmounted(() => {
 
 /* 学部/系は上から35%、左から5% */
 .pos-faculty {
-  top: 18%;
-  left: 5%;
+  top: 40%;
+  left: 0%;
 }
 
 .pos-origin {
-  top: 40%;
-  left: 0%;
+  top: 18%;
+  left: 5%;
 }
 
 .pos-like {

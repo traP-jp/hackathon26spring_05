@@ -52,7 +52,6 @@ body {
 /* ヘッダーの高さ分だけ上部に余白を作る */
 .main-content {
   padding-top: 70px; 
-  max-width: 1200px;
   margin: 0 auto;
   padding-left: 20px;
   padding-right: 20px;

@@ -21,7 +21,7 @@
           </li>
           <!-- 自己紹介（Myself）画面へ -->
           <li>
-            <router-link to="/myself" class="nav-item" title="自己紹介">
+            <router-link to="/me" class="nav-item" title="自己紹介">
               <span class="nav-icon">👤</span>
               <span class="nav-label">自己紹介</span>
             </router-link>
