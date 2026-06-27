@@ -1,13 +1,37 @@
 package handler
 
-import "github.com/labstack/echo/v4"
+import (
+	"cmp"
+	"os"
 
-type handler struct{}
+	"github.com/gorilla/sessions"
+	"github.com/labstack/echo/v4"
+	"github.com/traP-jp/hackathon26spring_05/Qpid/repository"
+	"github.com/traP-jp/hackathon26spring_05/Qpid/repository/mock"
+)
+
+type handler struct {
+	repository repository.Repository
+	sessions   sessions.Store
+}
 
 func Serve() {
 	e := echo.New()
 
-	h := &handler{}
+	// _, err := infrastructure.NewDB()
+	// if err != nil {
+	// 	e.Logger.Fatal(err)
+	// 	return
+	// }
+
+	repo := mock.NewMockRepository()
+
+	h := &handler{
+		repository: repo,
+		sessions: sessions.NewCookieStore([]byte(
+			cmp.Or(os.Getenv("SESSION_SECRET"), "secret"),
+		)),
+	}
 
 	h.mapRoutes(e)
 	e.Logger.Fatal(e.Start(":8080"))
