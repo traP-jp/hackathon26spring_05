@@ -1,0 +1,456 @@
+openapi: 3.1.0
+info:
+  title: Qpid API
+  version: 0.1.0
+servers:
+  - url: http://localhost:8080/api
+security:
+  - cookieAuth: []
+tags:
+  - name: auth
+    description: Authentication and account lifecycle
+  - name: me
+    description: Current user profile and actions
+  - name: users
+    description: User lookup
+  - name: suggestions
+    description: Recommended users
+paths:
+  /login:
+    get:
+      security: []
+      tags:
+        - auth
+      summary: ログイン開始
+      operationId: startLogin
+      responses:
+        '302':
+          description: OAuth2 providerへリダイレクトする
+          headers:
+            Location:
+              description: OAuth2 authorization URL
+              schema:
+                type: string
+                format: uri
+  /login/callback:
+    post:
+      security: []
+      tags:
+        - auth
+      summary: OAuth2 コールバック
+      operationId: loginCallback
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OAuth2CallbackRequest'
+      responses:
+        '204':
+          description: ログイン成功
+        '400':
+          $ref: '#/components/responses/BadRequest'
+  /signup:
+    post:
+      security: []
+      tags:
+        - auth
+      summary: アカウント作成 = 同意
+      operationId: signup
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SignupRequest'
+      responses:
+        '201':
+          description: アカウント作成成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+  /logout:
+    post:
+      security: []
+      tags:
+        - auth
+      summary: ログアウト
+      operationId: logout
+      responses:
+        '204':
+          description: ログアウト成功
+  /me:
+    get:
+      tags:
+        - me
+      summary: 自分の情報取得
+      operationId: getMe
+      responses:
+        '200':
+          description: 自分のユーザー情報
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+    put:
+      tags:
+        - me
+      summary: マイプロフィール更新
+      operationId: updateMe
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProfileUpdateRequest'
+      responses:
+        '200':
+          description: 更新後の自分のユーザー情報
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+  /me/likes:
+    get:
+      tags:
+        - me
+      summary: LIKE した人を取得
+      operationId: listMyLikes
+      responses:
+        '200':
+          description: 自分がLIKEしたユーザー一覧
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/UserSummary'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+    post:
+      tags:
+        - me
+      summary: LIKE (相手に通知)
+      operationId: likeUser
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserActionRequest'
+      responses:
+        '204':
+          description: LIKE成功
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+  /me/liked-by:
+    get:
+      tags:
+        - me
+      summary: 自分をLIKEした人を取得
+      operationId: listUsersWhoLikedMe
+      responses:
+        '200':
+          description: 自分をLIKEしたユーザー一覧
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/UserSummary'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+  /me/nopes:
+    post:
+      tags:
+        - me
+      summary: NOPE (オススメ表示優先度を下げる)
+      operationId: nopeUser
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserActionRequest'
+      responses:
+        '204':
+          description: NOPE成功
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+  /users/{id}:
+    get:
+      tags:
+        - users
+      summary: ユーザー情報取得
+      operationId: getUser
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: ユーザーID
+          schema:
+            type: string
+          example: tidus
+      responses:
+        '200':
+          description: ユーザー情報
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /suggestions:
+    get:
+      tags:
+        - suggestions
+      summary: オススメ取得
+      operationId: listSuggestions
+      responses:
+        '200':
+          description: オススメユーザー一覧
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Suggestion'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+components:
+  securitySchemes:
+    cookieAuth:
+      type: apiKey
+      in: cookie
+      name: session
+      description: 認証用セッションCookie
+  schemas:
+    OAuth2CallbackRequest:
+      type: object
+      required:
+        - code
+        - state
+      properties:
+        code:
+          type: string
+          description: OAuth2 authorization code
+        state:
+          type: string
+          description: CSRF対策用state
+      additionalProperties: false
+    SignupRequest:
+      type: object
+      required:
+        - agreed
+      properties:
+        agreed:
+          type: boolean
+          const: true
+          description: 利用規約等への同意
+      additionalProperties: false
+    ProfileUpdateRequest:
+      type: object
+      properties:
+        iconFileId:
+          type:
+            - string
+            - 'null'
+          format: uuid
+          description: アイコン画像ID。nullの場合はtraQから参照する
+        major:
+          type:
+            - string
+            - 'null'
+          description: 学部/系
+        affiliations:
+          type: array
+          description: 所属班
+          items:
+            type: string
+          uniqueItems: true
+        hometown:
+          type:
+            - string
+            - 'null'
+          description: 出身
+        tags:
+          type: object
+          description: タグ名をキーにしたタグ情報
+          additionalProperties:
+            $ref: '#/components/schemas/Tag'
+          example:
+            c++:
+              label: programmingLanguage
+              affinity: positive
+              strength: 0.89
+        bio:
+          type: string
+          description: 自己紹介
+      additionalProperties: false
+    UserActionRequest:
+      type: object
+      required:
+        - username
+      properties:
+        username:
+          type: string
+          description: 対象ユーザーID
+          example: tidus
+      additionalProperties: false
+    UserSummary:
+      type: object
+      required:
+        - username
+      properties:
+        username:
+          type: string
+          description: ユーザーID
+          example: tidus
+      additionalProperties: false
+    User:
+      type: object
+      required:
+        - username
+        - iconFileId
+        - major
+        - affiliations
+        - hometown
+        - tags
+        - bio
+      properties:
+        username:
+          type: string
+          description: ユーザーID
+          example: tidus
+        iconFileId:
+          type:
+            - string
+            - 'null'
+          format: uuid
+          description: アイコン画像ID。nullの場合はtraQから参照する
+          example: b551c446-b00f-44e2-bb7d-99e0ea33e876
+        major:
+          type:
+            - string
+            - 'null'
+          description: 学部/系
+          example: 工学院 経営工学系
+        affiliations:
+          type: array
+          description: 所属班
+          items:
+            type: string
+          uniqueItems: true
+          example:
+            - algorithm
+            - ctf
+            - game
+            - graphics
+            - kaggle
+            - sound
+            - sysad
+        hometown:
+          type:
+            - string
+            - 'null'
+          description: 出身
+          example: 鳥取県
+        tags:
+          type: object
+          description: タグ名をキーにしたタグ情報
+          additionalProperties:
+            $ref: '#/components/schemas/Tag'
+          example:
+            c++:
+              label: programmingLanguage
+              affinity: positive
+              strength: 0.89
+        bio:
+          type: string
+          description: 自己紹介
+          example: ''
+      additionalProperties: false
+    Tag:
+      type: object
+      required:
+        - affinity
+        - strength
+      properties:
+        label:
+          type: string
+          description: 好きな/嫌いな〇〇の〇〇の部分
+          example: programmingLanguage
+        affinity:
+          type: string
+          description: 好き嫌い
+          enum:
+            - positive
+            - neutral
+            - negative
+        strength:
+          type: number
+          format: double
+          description: 言及された回数に対して単調増加なパラメータ
+          minimum: 0
+          maximum: 1
+      additionalProperties: false
+    Suggestion:
+      type: object
+      required:
+        - username
+        - similarity
+      properties:
+        username:
+          type: string
+          description: ユーザーID
+          example: tidus
+        similarity:
+          type: number
+          format: double
+          description: 類似度
+          minimum: 0
+          maximum: 1
+          example: 0.5
+      additionalProperties: false
+    Error:
+      type: object
+      required:
+        - message
+      properties:
+        message:
+          type: string
+      additionalProperties: false
+  responses:
+    BadRequest:
+      description: リクエストが不正
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    Unauthorized:
+      description: 認証が必要
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    NotFound:
+      description: 対象が見つからない
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
