@@ -6,8 +6,10 @@ const activeTab = ref<'liked' | 'likedBy'>('liked')
 
 // バックエンドの UserSummary 型の定義
 interface UserSummary {
-  username: string
-  displayName?: string
+
+  username: string    // DBの PRIMARY KEY
+  name: string        // サークルの人の名前（消さずに残しました！）
+
   bio?: string
 }
 
@@ -67,7 +69,7 @@ const displayUsers = computed(() => {
     <div v-else class="cards-grid">
       <div v-for="user in displayUsers" :key="user.username" class="card">
         <div class="icon-placeholder"></div>
-        <p class="user-name">{{ user.displayName || user.username }}</p>
+        <p class="user-name">{{ user.name || user.username }}</p>
         <p class="user-bio">{{ user.bio || '自己紹介文はまだありません。' }}</p>
       </div>
     </div>
