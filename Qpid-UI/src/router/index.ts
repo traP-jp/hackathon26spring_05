@@ -7,7 +7,7 @@ import Likes from '../components/Likes.vue'
 
 const routes = [
   { path: '/', component: Matching },
-  { path: '/myself', component: Myself },
+  { path: '/me', component: Myself },
   { path: '/likes', component: Likes}
 
 ]
