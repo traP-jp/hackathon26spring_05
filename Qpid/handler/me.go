@@ -98,9 +98,15 @@ func (h *handler) updateMe(c echo.Context) error {
 
 	tags := make(map[string]domain.Tag, len(data.Tags))
 	for name, t := range data.Tags {
+		aff := domain.TagAffinity(t.Affinity)
+		switch aff {
+		case domain.TagAffinityPositive, domain.TagAffinityNeutral, domain.TagAffinityNegative:
+		default:
+			return c.JSON(http.StatusBadRequest, errorResponse{Message: "invalid tag affinity"})
+		}
 		tags[name] = domain.Tag{
 			Label:    t.Label,
-			Affinity: domain.TagAffinity(t.Affinity),
+			Affinity: aff,
 			Strength: t.Strength,
 		}
 	}
