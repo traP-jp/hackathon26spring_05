@@ -11,31 +11,31 @@ import (
 	"github.com/traP-jp/hackathon26spring_05/Qpid/repository/mock"
 )
 
-type suggestionHandlerTestRepository struct {
+type mockSuggestionRepository struct {
 	*mock.MockRepository
 	listSuggestions func(username string, limit int) ([]domain.Suggestion, error)
 }
 
-func (r *suggestionHandlerTestRepository) ListSuggestions(username string, limit int) ([]domain.Suggestion, error) {
+func (r *mockSuggestionRepository) ListSuggestions(username string, limit int) ([]domain.Suggestion, error) {
 	return r.listSuggestions(username, limit)
 }
 
-type testLoginUserRetriever struct {
+type mockLoginUserRetriever struct {
 	username string
 }
 
-func (r *testLoginUserRetriever) IsUserLoggedIn() bool {
+func (r *mockLoginUserRetriever) IsUserLoggedIn() bool {
 	return r.username != ""
 }
 
-func (r *testLoginUserRetriever) GetLoginUser() (string, error) {
+func (r *mockLoginUserRetriever) GetLoginUser() (string, error) {
 	return r.username, nil
 }
 
 func TestListSuggestions(t *testing.T) {
 	t.Parallel()
 
-	repo := &suggestionHandlerTestRepository{
+	repo := &mockSuggestionRepository{
 		MockRepository: mock.NewMockRepository(),
 		listSuggestions: func(username string, limit int) ([]domain.Suggestion, error) {
 			if username != "test-user" {
@@ -56,7 +56,7 @@ func TestListSuggestions(t *testing.T) {
 	req := httptest.NewRequest(http.MethodGet, "/api/suggestions", nil)
 	rec := httptest.NewRecorder()
 	c := e.NewContext(req, rec)
-	c.Set("loginUserRetriever", &testLoginUserRetriever{username: "test-user"})
+	c.Set("loginUserRetriever", &mockLoginUserRetriever{username: "test-user"})
 
 	if err := h.listSuggestions(c); err != nil {
 		t.Fatalf("listSuggestions returned error: %v", err)
@@ -85,7 +85,7 @@ func TestListSuggestions(t *testing.T) {
 func TestListSuggestionsReturnsValidationErrorForInvalidSuggestion(t *testing.T) {
 	t.Parallel()
 
-	repo := &suggestionHandlerTestRepository{
+	repo := &mockSuggestionRepository{
 		MockRepository: mock.NewMockRepository(),
 		listSuggestions: func(username string, limit int) ([]domain.Suggestion, error) {
 			return []domain.Suggestion{
@@ -99,7 +99,7 @@ func TestListSuggestionsReturnsValidationErrorForInvalidSuggestion(t *testing.T)
 	req := httptest.NewRequest(http.MethodGet, "/api/suggestions", nil)
 	rec := httptest.NewRecorder()
 	c := e.NewContext(req, rec)
-	c.Set("loginUserRetriever", &testLoginUserRetriever{username: "test-user"})
+	c.Set("loginUserRetriever", &mockLoginUserRetriever{username: "test-user"})
 
 	if err := h.listSuggestions(c); err != nil {
 		t.Fatalf("listSuggestions returned error: %v", err)
