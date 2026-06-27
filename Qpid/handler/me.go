@@ -186,7 +186,6 @@ func (h *handler) listUsersWhoLikedMe(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, errorResponse{Message: "cannot like yourself"})
 	}
 
-
 	users, err := h.repository.ListUsersWhoLiked(username)
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, errorResponse{Message: "failed to list users who liked me"})
