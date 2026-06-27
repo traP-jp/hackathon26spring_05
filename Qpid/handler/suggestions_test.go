@@ -2,6 +2,7 @@ package handler
 
 import (
 	"encoding/json"
+	"math"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -107,5 +108,48 @@ func TestListSuggestions_InvalidData(t *testing.T) {
 
 	if rec.Code != http.StatusInternalServerError {
 		t.Fatalf("unexpected status code: got %d want %d", rec.Code, http.StatusInternalServerError)
+	}
+}
+
+func TestListSuggestions_InvalidSimilarity(t *testing.T) {
+	t.Parallel()
+
+	testCases := []struct {
+		name       string
+		similarity float64
+	}{
+		{name: "nan", similarity: math.NaN()},
+		{name: "negative", similarity: -0.1},
+		{name: "too large", similarity: 1.1},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
+			repo := &mockSuggestionRepository{
+				MockRepository: mock.NewMockRepository(),
+				listSuggestions: func(username string, limit int) ([]domain.Suggestion, error) {
+					return []domain.Suggestion{
+						{Username: "suggested-user", Similarity: tc.similarity},
+					}, nil
+				},
+			}
+			h := &handler{repository: repo}
+
+			e := echo.New()
+			req := httptest.NewRequest(http.MethodGet, "/api/suggestions", nil)
+			rec := httptest.NewRecorder()
+			c := e.NewContext(req, rec)
+			c.Set("loginUserRetriever", &mockLoginUserRetriever{username: "test-user"})
+
+			if err := h.listSuggestions(c); err != nil {
+				t.Fatalf("listSuggestions returned error: %v", err)
+			}
+
+			if rec.Code != http.StatusInternalServerError {
+				t.Fatalf("unexpected status code: got %d want %d", rec.Code, http.StatusInternalServerError)
+			}
+		})
 	}
 }
