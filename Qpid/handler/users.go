@@ -5,6 +5,7 @@ import (
 
 	"github.com/labstack/echo/v4"
 	"github.com/traP-jp/hackathon26spring_05/Qpid/domain"
+	"github.com/traP-jp/hackathon26spring_05/Qpid/handler/middleware"
 )
 
 // タグに対する好き嫌いの型
@@ -28,7 +29,9 @@ type UserResponse struct {
 // GET /api/users/:id
 func (h *handler) getUser(c echo.Context) error {
 	// ① ログインチェックを追加
-	if !h.loginUserRetriever.IsUserLoggedIn() {
+	loginUserRetriever := middleware.GetLoginUserRetriever(c)
+
+	if !loginUserRetriever.IsUserLoggedIn() {
 		return unauthorized(c)
 	}
 
