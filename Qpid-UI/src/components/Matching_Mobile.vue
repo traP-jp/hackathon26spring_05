@@ -6,7 +6,7 @@ import 'vue3-toastify/dist/index.css';
 // 1. ダミーのユーザーデータ（バックエンドと接続するまでの繋ぎ）
 interface UserProfile {
   username: string       // DBの PRIMARY KEY
-  name: string           // 班の人が残してほしいと言っていたサークルの人の名前
+  name: string           // name
   major: string          // 学部/系
   hometown: string       // 出身
   like_topic: string     // 好きな〇〇（カテゴリ名）
@@ -22,7 +22,7 @@ interface UserProfile {
 const dummyUsers: UserProfile[] = [
   {
     username: 'n3',
-    name: 'εИ',          // name が復活しました！
+    name: 'εИ',          // name 
     major: '情報理工学院 情報工学系 B2',
     hometown: '高知県',
     like_topic: '食べ物',
@@ -110,25 +110,25 @@ const touchEnd = () => {
 </script>
 
 <template>
-  <div class="matching-mobile-screen">
+  <div 
+    class="matching-mobile-screen"
+    @mousedown="touchStart"
+    @mousemove="touchMove"
+    @mouseup="touchEnd"
+    @mouseleave="touchEnd"
+    @touchstart="touchStart"
+    @touchmove="touchMove"
+    @touchend="touchEnd"
+  >
     <div 
       v-if="currentUser" 
       class="mobile-card-container"
-      @mousedown="touchStart"
-      @mousemove="touchMove"
-      @mouseup="touchEnd"
-      @mouseleave="touchEnd"
-      @touchstart="touchStart"
-      @touchmove="touchMove"
-      @touchend="touchEnd"
       :class="{ 'is-dragging': isDragging }"
       :style="{ 
-        transform: `translateX(${swipeOffset}px) rotate(${swipeOffset * 0.05}deg)`, 
+        transform: `translateX(${swipeOffset}px)`, 
         transition: isDragging ? 'none' : 'transform 0.3s ease' 
       }"
     >  
-      <div class="card-header-bar"></div>
-
       <div class="card-scroll-body">
         
         <div class="profile-main">
@@ -204,6 +204,12 @@ const touchEnd = () => {
   box-sizing: border-box;
   user-select: none;
   overflow: hidden;
+  /* 画面全体のどこをドラッグしてもカーソルが「掴む」マークになるように変更 */
+  cursor: grab;
+}
+
+.matching-mobile-screen:active {
+  cursor: grabbing;
 }
 
 .mobile-card-container {
@@ -218,19 +224,8 @@ const touchEnd = () => {
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  cursor: grab;
-}
-
-.mobile-card-container:active {
-  cursor: grabbing;
-}
-
-.card-header-bar {
-  width: 100%;
-  height: 24px;
-  background-color: #f1c2c2; 
-  border-bottom: 1px solid #c8c8c8;
-  flex-shrink: 0;
+  /* カード自体のクリックイベントがスクロールの邪魔をしないよう設定 */
+  pointer-events: auto;
 }
 
 .card-scroll-body {
