@@ -149,8 +149,8 @@ const getReccomend = async() =>{
 onMounted(() => {
   window.addEventListener('keydown', handleKeyDown)
   users.value=dummyUsers
-  currentUser.value=dummyUsers[0]
-})
+  currentUser.value = dummyUsers[0] ?? null}
+)
 onUnmounted(() => {
   window.removeEventListener('keydown', handleKeyDown)
 })
