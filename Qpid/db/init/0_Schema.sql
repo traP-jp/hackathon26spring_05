@@ -37,7 +37,7 @@ CREATE TABLE actions (
 );
 
 CREATE INDEX idx_from_username_and_status ON actions (from_username, status);
-CREATE INDEX idx_to_username_and_status ON acctions (to_username, status);
+CREATE INDEX idx_to_username_and_status ON actions (to_username, status);
 
 CREATE TABLE icons(
   username VARCHAR(36) NOT NULL,
