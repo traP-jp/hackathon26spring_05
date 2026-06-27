@@ -28,7 +28,12 @@ func (r *repositoryImpl) ListLikedUsers(username string) ([]domain.UserSummary, 
 
 // LIKE してくれたユーザーを取得する。
 func (r *repositoryImpl) ListUsersWhoLiked(username string) ([]domain.UserSummary, error) {
-	return nil, nil
+	var users []domain.UserSummary
+	err := r.db.Select(&users,
+		"SELECT from_username FROM actions WHERE to_username = ? AND status = ?",
+		username, actionStatusLike,
+	)
+	return users, err
 }
 
 // アクション済みか確認する。
