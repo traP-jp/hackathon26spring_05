@@ -33,5 +33,10 @@ func (r *repositoryImpl) ListUsersWhoLiked(username string) ([]domain.UserSummar
 
 // アクション済みか確認する。
 func (r *repositoryImpl) IsActionExists(fromUsername, toUsername string) (bool, error) {
-	return false, nil
+	var exists bool
+	err := r.db.Get(&exists,
+		`SELECT EXISTS (SELECT 1 FROM actions WHERE from_username = ? AND to_username = ?)`,
+		fromUsername, toUsername,
+	)
+	return exists, err
 }
