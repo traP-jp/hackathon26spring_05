@@ -144,11 +144,11 @@ const getReccomend = async() =>{
     @touchmove="touchMove"
     @touchend="touchEnd"
   >
+    <!-- 2. rotate を削除し、真横の平行移動（translateX）のみに変更 -->
     <div 
       v-if="currentUser" 
       class="mobile-card-container"
       :class="{ 'is-dragging': isDragging }"
-      /* 2. rotate を削除し、真横の平行移動（translateX）のみに変更 */
       :style="{ 
         transform: `translateX(${swipeOffset}px)`, 
         transition: isDragging ? 'none' : 'transform 0.3s ease' 
