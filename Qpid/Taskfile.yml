@@ -16,6 +16,7 @@ tasks:
       - sh: command -v go >/dev/null 2>&1
         msg: Go is not installed.
     cmds:
+      - task: init
       - go mod tidy
       - docker compose --env-file {{.ENV_LOCAL_FILE}} up --build
 
