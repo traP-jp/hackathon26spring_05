@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 
+//ダミーデータの削除と本物のデータの追加
 // タブの切り替え状態を管理 ('liked' = Likeした人, 'likedBy' = Likeされた人)
 const activeTab = ref<'liked' | 'likedBy'>('liked')
 
