@@ -146,6 +146,44 @@ paths:
           $ref: '#/components/responses/BadRequest'
         '401':
           $ref: '#/components/responses/Unauthorized'
+  /me/icon:
+    patch:
+      tags:
+        - me
+      summary: 自分のアイコン画像更新
+      operationId: updateMyIcon
+      requestBody:
+        required: true
+        content:
+          image/png:
+            schema:
+              type: string
+              format: binary
+          image/jpeg:
+            schema:
+              type: string
+              format: binary
+          image/webp:
+            schema:
+              type: string
+              format: binary
+      responses:
+        '204':
+          description: アイコン画像更新成功
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+    delete:
+      tags:
+        - me
+      summary: 自分のアイコン画像削除
+      operationId: deleteMyIcon
+      responses:
+        '204':
+          description: アイコン画像削除成功
+        '401':
+          $ref: '#/components/responses/Unauthorized'
   /users/{id}:
     get:
       tags:
@@ -167,6 +205,40 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/User'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /users/{id}/icon:
+    get:
+      tags:
+        - users
+      summary: ユーザーのアイコン画像取得
+      operationId: getUserIcon
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: ユーザーID
+          schema:
+            type: string
+          example: tidus
+      responses:
+        '200':
+          description: ユーザーのアイコン画像
+          content:
+            image/png:
+              schema:
+                type: string
+                format: binary
+            image/jpeg:
+              schema:
+                type: string
+                format: binary
+            image/webp:
+              schema:
+                type: string
+                format: binary
         '401':
           $ref: '#/components/responses/Unauthorized'
         '404':
