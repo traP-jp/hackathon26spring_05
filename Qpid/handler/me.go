@@ -14,13 +14,13 @@ type tag struct {
 }
 
 type meResponse struct {
-	Username     string                 `json:"username"`
-	IconFileID   string                `json:"iconFileId"`
-	Major        string                `json:"major"`
-	Affiliations []string               `json:"affiliations"`
-	Hometown     string                `json:"hometown"`
-	Tags         map[string]tag         `json:"tags"`
-	Bio          string                 `json:"bio"`
+	Username     string         `json:"username"`
+	IconFileID   string         `json:"iconFileId"`
+	Major        string         `json:"major"`
+	Affiliations []string       `json:"affiliations"`
+	Hometown     string         `json:"hometown"`
+	Tags         map[string]tag `json:"tags"`
+	Bio          string         `json:"bio"`
 }
 
 // GET /api/me
@@ -39,13 +39,13 @@ func (h *handler) getMe(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, errorResponse{Message: "failed to load user"})
 	}
 	if user == nil {
-		return c.JSON(http.StatusInternalServerError,errorResponse{Message: "user not found "})
+		return c.JSON(http.StatusInternalServerError, errorResponse{Message: "user not found "})
 	}
 
 	return c.JSON(http.StatusOK, toMeResponse(*user))
 }
 
-func toMeResponse(user domain.User) meResponse {//FindByUsernameで取得したデータをuserをjsonにして返す用
+func toMeResponse(user domain.User) meResponse { //FindByUsernameで取得したデータをuserをjsonにして返す用
 	tags := make(map[string]tag, len(user.Tags))
 	for name, userTag := range user.Tags {
 		tags[name] = tag{
