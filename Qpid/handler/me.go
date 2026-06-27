@@ -27,18 +27,12 @@ type meResponse struct {
 
 // GET /api/me
 func (h *handler) getMe(c echo.Context) error {
-	loginUserRetriever := middleware.GetLoginUserRetriever(c)
-
-	if !loginUserRetriever.IsUserLoggedIn() {
+	username := middleware.GetUsername(c)
+	if username == nil {
 		return unauthorized(c)
 	}
 
-	username, err := loginUserRetriever.GetLoginUser()
-	if err != nil {
-		return c.JSON(http.StatusInternalServerError, errorResponse{Message: "failed to get login user"})
-	}
-
-	user, err := h.repository.FindByUsername(username)
+	user, err := h.repository.FindByUsername(*username)
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, errorResponse{Message: "failed to load user"})
 	}
@@ -146,18 +140,12 @@ func toUserSummaryResponses(users []domain.UserSummary) ([]userSummaryResponse, 
 
 // GET /api/me/likes
 func (h *handler) listMyLikes(c echo.Context) error {
-	loginUserRetriever := middleware.GetLoginUserRetriever(c)
-
-	if !loginUserRetriever.IsUserLoggedIn() {
+	username := middleware.GetUsername(c)
+	if username == nil {
 		return unauthorized(c)
 	}
 
-	username, err := loginUserRetriever.GetLoginUser()
-	if err != nil {
-		return c.JSON(http.StatusInternalServerError, errorResponse{Message: "failed to get login user"})
-	}
-
-	users, err := h.repository.ListLikedUsers(username)
+	users, err := h.repository.ListLikedUsers(*username)
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, errorResponse{Message: "failed to list liked users"})
 	}
@@ -166,7 +154,6 @@ func (h *handler) listMyLikes(c echo.Context) error {
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, errorResponse{Message: "failed to validate liked users"})
 	}
-
 	return c.JSON(http.StatusOK, result)
 }
 
@@ -176,15 +163,9 @@ type userActionRequest struct {
 
 // POST /api/me/likes
 func (h *handler) likeUser(c echo.Context) error {
-	loginUserRetriever := middleware.GetLoginUserRetriever(c)
-
-	if !loginUserRetriever.IsUserLoggedIn() {
+	username := middleware.GetUsername(c)
+	if username == nil {
 		return unauthorized(c)
-	}
-
-	username, err := loginUserRetriever.GetLoginUser()
-	if err != nil {
-		return c.JSON(http.StatusInternalServerError, errorResponse{Message: "failed to get login user"})
 	}
 
 	toUser := &userActionRequest{}
@@ -195,7 +176,7 @@ func (h *handler) likeUser(c echo.Context) error {
 	if toUser.Username == "" {
 		return c.JSON(http.StatusBadRequest, errorResponse{Message: "username is required"})
 	}
-	if toUser.Username == username {
+	if toUser.Username == *username {
 		return c.JSON(http.StatusBadRequest, errorResponse{Message: "cannot like yourself"})
 	}
 
@@ -207,7 +188,7 @@ func (h *handler) likeUser(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, errorResponse{Message: "user does not exist"})
 	}
 
-	if err = h.repository.Like(username, toUser.Username); err != nil {
+	if err = h.repository.Like(*username, toUser.Username); err != nil {
 		return c.JSON(http.StatusInternalServerError, errorResponse{Message: "failed to like user"})
 	}
 

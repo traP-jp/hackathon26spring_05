@@ -2,7 +2,6 @@ package middleware
 
 import (
 	"github.com/labstack/echo/v4"
-	"github.com/traP-jp/hackathon26spring_05/Qpid/domain"
 	"github.com/traP-jp/hackathon26spring_05/Qpid/env"
 	"github.com/traP-jp/hackathon26spring_05/Qpid/repository"
 )
@@ -30,37 +29,27 @@ func AuthenticationMiddleware(env *env.Env, repo repository.Repository) echo.Mid
 					return echo.ErrUnauthorized
 				}
 
-				setLoginUserRetriever(c, &loginUserRetrieverImpl{username: username})
+				setUsername(c, username)
 				return next(c)
 			}
 			// ローカル環境では常にログイン済みユーザーとして扱う
-			setLoginUserRetriever(c, &loginUserRetrieverImpl{username: "test-user"})
+			setUsername(c, "test-user")
 			return next(c)
 		}
 	}
 }
 
-type loginUserRetrieverImpl struct {
-	username string
+const usernameKey = "Username"
+
+func setUsername(c echo.Context, username string) {
+	c.Set(usernameKey, username)
 }
 
-func (r *loginUserRetrieverImpl) IsUserLoggedIn() bool {
-	return r.username != ""
-}
-
-func (r *loginUserRetrieverImpl) GetLoginUser() (string, error) {
-	return r.username, nil
-}
-
-func setLoginUserRetriever(ctx echo.Context, retriever domain.LoginUserRetriever) {
-	ctx.Set("loginUserRetriever", retriever)
-}
-
-func GetLoginUserRetriever(ctx echo.Context) domain.LoginUserRetriever {
-	v := ctx.Get("loginUserRetriever")
-	if retriever, ok := v.(domain.LoginUserRetriever); ok && retriever != nil {
-		return retriever
+// ログイン中のユーザー名を取得する
+func GetUsername(c echo.Context) *string {
+	username, ok := c.Get(usernameKey).(string)
+	if !ok {
+		return nil
 	}
-	// Middleware 未適用などの場合は未ログイン扱いにする
-	return &loginUserRetrieverImpl{}
+	return &username
 }
