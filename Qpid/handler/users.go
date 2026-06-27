@@ -35,12 +35,6 @@ func (h *handler) getUser(c echo.Context) error {
 	// ② パスパラメータから「id」を取得
 	userID := c.Param("id")
 
-	_, err := h.loginUserRetriever.GetLoginUser()
-
-	if err != nil {
-		return c.JSON(http.StatusInternalServerError, errorResponse{Message: "failed to get login user"})
-	}
-
 	// ③ データベース等からユーザーを取得
 	user, err := h.repository.FindByUsername(userID)
 	if err != nil {
