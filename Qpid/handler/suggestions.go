@@ -20,7 +20,7 @@ func toSuggestionResponses(suggestions []domain.Suggestion) ([]suggestionRespons
 		if suggestion.Username == "" {
 			return nil, errors.New("invalid suggestion")
 		}
-		if suggestion.Similarity < 0 || suggestion.Similarity > 1 {
+		if !(suggestion.Similarity <= 0 && suggestion.Similarity <= 1) {
 			return nil, errors.New("invalid suggestion similarity")
 		}
 		result[i] = suggestionResponse{
