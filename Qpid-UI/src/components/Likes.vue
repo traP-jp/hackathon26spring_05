@@ -1,72 +1,40 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
-
-//注意：色とかはまだ何も決めていません。全部仮です。
+import { ref, computed, onMounted } from 'vue'
+import axios from 'axios'
 
 // タブの切り替え状態を管理 ('liked' = Likeした人, 'likedBy' = Likeされた人)
 const activeTab = ref<'liked' | 'likedBy'>('liked')
 
-// Likeした人一覧のダミーデータ（バックエンドのスペルに合わせました！）
-const dummyLikedUsers = [
-  { 
-    username: 'n3', 
-    displayName: 'エヌさん', 
-    bio: '明日晴れますよ(断定）\nうにお願いします。（注文）' 
-  },
-  { 
-    username: 'Jiro', 
-    displayName: 'Jiro', 
-    bio: 'バックエンドエンジニアです。\nGo言語が好きです。' 
-  },
-  { 
-    username: 'Saburo', 
-    displayName: 'Saburo', 
-    bio: 'デザイナー兼フロントエンド。\nUI/UXにこだわりがあります!' 
-  },
-  { 
-    username: 'Shiro', 
-    displayName: 'Shiro', 
-    bio: 'AIに興味があります。\nよろしくお願いします。' 
-  },
-  { 
-    username: 'Goro', 
-    displayName: 'Goro', 
-    bio: 'これは自己紹介文のサンプルです、パイソンはいいぞよりも長くこのままだとタブ一覧からはみ出すかもしれないので、先ほどのCSSでしっかり「...」になるかテストするための長い文章です。' 
-  },
-  { 
-    username: 'Rokuro', 
-    displayName: 'Rokuro', 
-    bio: 'プログラミング初心者です！\n楽しく開発したいです。' 
-  }
-]
+// バックエンドの UserSummary 型の定義
+interface UserSummary {
+  username: string
+  displayName?: string // バック側が追加してくれた時用のオプショナル
+  bio?: string
+}
 
-// Likeされた人一覧のダミーデータ（こちらもバックエンドのスペルに合わせました！）
-const dummyLikedByUsers = [
-  { 
-    username: 'Hanako', 
-    displayName: 'Hanako', 
-    bio: 'React派ですがVueも触ってみてます!\n仲良くしてください。' 
-  },
-  { 
-    username: 'Keiko', 
-    displayName: 'Keiko', 
-    bio: '趣味はカフェ巡りです。\n休日はもくもく会によく行きます。' 
-  },
-  { 
-    username: 'Mari', 
-    displayName: 'Mari', 
-    bio: 'TypeScript最高!\n型がないと不安になります。' 
-  },
-  { 
-    username: 'Yumi', 
-    displayName: 'Yumi', 
-    bio: 'インフラエンジニア。\nAWSメインで触ってます。' 
+// 本物のデータを入れるための空っぽの箱
+const likedUsers = ref<UserSummary[]>([])
+const likedByUsers = ref<UserSummary[]>([])
+
+// 画面が開いた瞬間にバックエンドから本物のデータを2つとも取ってくる
+onMounted(async () => {
+  try {
+    // 1. LIKEした人をバックエンドから取得
+    const resLikes = await axios.get('http://localhost:8080/api/me/likes', { withCredentials: true })
+    likedUsers.value = resLikes.data
+
+    // 2. 自分をLIKEした人をバックエンドから取得
+    const resLikedBy = await axios.get('http://localhost:8080/api/me/liked-by', { withCredentials: true })
+    likedByUsers.value = resLikedBy.data
+
+  } catch (error) {
+    console.error('APIの取得に失敗しました。ログインしていない可能性があります:', error)
   }
-]
+})
 
 // 現在選択されているタブに応じて、表示する配列を切り替える
 const displayUsers = computed(() => {
-  return activeTab.value === 'liked' ? dummyLikedUsers : dummyLikedByUsers
+  return activeTab.value === 'liked' ? likedUsers.value : likedByUsers.value
 })
 </script>
 
@@ -89,11 +57,15 @@ const displayUsers = computed(() => {
       </button>
     </div>
 
-    <div class="cards-grid">
+    <div v-if="displayUsers.length === 0" class="no-users">
+      まだユーザーがいません。
+    </div>
+
+    <div v-else class="cards-grid">
       <div v-for="user in displayUsers" :key="user.username" class="card">
         <div class="icon-placeholder"></div>
-        <p class="user-name">{{ user.displayName }}</p>
-        <p class="user-bio">{{ user.bio }}</p>
+        <p class="user-name">{{ user.displayName || user.username }}</p>
+        <p class="user-bio">{{ user.bio || '自己紹介文はまだありません。' }}</p>
       </div>
     </div>
   </div>
@@ -102,12 +74,20 @@ const displayUsers = computed(() => {
 <style scoped>
 /* ページ全体を画面の横幅いっぱいまで広げる */
 .likes-page {
-  padding: 40px 5%; /* 左右に少し余白を取りつつ、画面幅いっぱいに広げる */
-  max-width: 100%; /* ★ここを100%にすることで右端まで伸びます */
+  padding: 40px 5%;
+  max-width: 100%;
   margin: 0 auto;
 }
 
-/* タブのスタイル（変更なし） */
+/* データがないときのメッセージ */
+.no-users {
+  font-size: 1.5rem;
+  color: #777;
+  text-align: center;
+  margin-top: 50px;
+}
+
+/* タブのスタイル */
 .tab-container {
   display: flex;
   margin-bottom: 40px;
@@ -138,8 +118,8 @@ const displayUsers = computed(() => {
 /* 4列で画面いっぱいに均等に広がるようにする */
 .cards-grid {
   display: grid;
-  grid-template-columns: repeat(4, 1fr); /* 画面幅をきっちり4等分して広げる */
-  gap: 40px; /* カード同士の間隔 */
+  grid-template-columns: repeat(4, 1fr);
+  gap: 40px;
 }
 
 /* カードの比率を維持したまま拡大 */
@@ -147,37 +127,35 @@ const displayUsers = computed(() => {
   background-color: #f0f0f0;
   border: 1px solid #aaa;
   border-radius: 20px;
-  padding: 10%; /* ★固定のpxではなく%にすることで、カード拡大に合わせて内側の余白も広がる */
+  padding: 10%;
   display: flex;
   flex-direction: column;
-  aspect-ratio: 2 / 3; /* ★ここで縦横の比率を固定（横2：縦3） */
+  aspect-ratio: 2 / 3;
 }
 
 /* アイコンの比率も維持 */
 .icon-placeholder {
-  width: 50%; /* ★カード幅の50%の大きさに設定 */
-  aspect-ratio: 1 / 1; /* ★常に正方形を維持する */
+  width: 50%;
+  aspect-ratio: 1 / 1;
   border: 1px solid #555;
   background-color: #fff;
   margin-bottom: 20px;
 }
 
 .user-name {
-  font-size: 1.8rem; /* カードが大きくなるのに合わせて文字も少し大きく */
+  font-size: 1.8rem;
   margin: 0 0 15px 0;
   color: #333;
 }
 
 .user-bio {
-  font-size: 1.3rem; /* こちらも少し大きく */
+  font-size: 1.3rem;
   white-space: pre-wrap;
   margin: 0;
   color: #555;
   line-height: 1.6;
-  
-  /* 紹介文が省略のための設定 */
   display: -webkit-box;
-  -webkit-line-clamp: 4; /* カードが縦に長くなった分、4行まで表示させる */
+  -webkit-line-clamp: 4;
   line-clamp: 4;
   -webkit-box-orient: vertical;
   overflow: hidden;
