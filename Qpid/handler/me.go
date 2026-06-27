@@ -163,14 +163,29 @@ func (h *handler) likeUser(c echo.Context) error {
 
 // GET /api/me/liked-by
 func (h *handler) listUsersWhoLikedMe(c echo.Context) error {
-	if !h.loginUserRetriever.IsUserLoggedIn() {
+	loginUserRetriever := middleware.GetLoginUserRetriever(c)
+
+	if !loginUserRetriever.IsUserLoggedIn() {
 		return unauthorized(c)
 	}
 
-	username, err := h.loginUserRetriever.GetLoginUser()
+	username, err := loginUserRetriever.GetLoginUser()
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, errorResponse{Message: "failed to get login user"})
 	}
+
+	toUser := &userActionRequest{}
+	if err := c.Bind(toUser); err != nil {
+		return c.JSON(http.StatusBadRequest, errorResponse{Message: "invalid request body"})
+	}
+
+	if toUser.Username == "" {
+		return c.JSON(http.StatusBadRequest, errorResponse{Message: "username is required"})
+	}
+	if toUser.Username == username {
+		return c.JSON(http.StatusBadRequest, errorResponse{Message: "cannot like yourself"})
+	}
+
 
 	users, err := h.repository.ListUsersWhoLiked(username)
 	if err != nil {
