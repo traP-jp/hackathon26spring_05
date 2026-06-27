@@ -82,6 +82,24 @@ func (r *MockRepository) ListPrecomputedUsernames() ([]string, error) {
 	return []string{"precomputed-user"}, nil
 }
 
+// アイコン画像を保存する。
+func (r *MockRepository) SaveIcon(username string, icon domain.Icon) error {
+	return nil
+}
+
+// アイコン画像を取得する。
+func (r *MockRepository) FindIconByUsername(username string) (*domain.Icon, error) {
+	return &domain.Icon{
+		Blob:     []byte("mock-icon"),
+		MimeType: "image/png",
+	}, nil
+}
+
+// アイコン画像を削除する。
+func (r *MockRepository) DeleteIcon(username string) error {
+	return nil
+}
+
 // 認証セッションを作成する。
 func (r *MockRepository) CreateAuthSession(sessionID string, session domain.AuthSession) error {
 	return nil

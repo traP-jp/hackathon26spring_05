@@ -60,10 +60,13 @@ func (h *handler) mapRoutes(e *echo.Echo) {
 				me.POST("/likes", h.likeUser)
 				me.GET("/liked-by", h.listUsersWhoLikedMe)
 				me.POST("/nopes", h.nopeUser)
+				me.PATCH("/icon", h.updateMyIcon)
+				me.DELETE("/icon", h.deleteMyIcon)
 			}
 			users := authenticated.Group("/users")
 			{
 				users.GET("/:id", h.getUser)
+				users.GET("/:id/icon", h.getUserIcon)
 			}
 			authenticated.GET("/suggestions", h.listSuggestions)
 		}

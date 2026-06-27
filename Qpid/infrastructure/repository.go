@@ -2,9 +2,10 @@ package infrastructure
 
 import (
 	"github.com/jmoiron/sqlx"
+	"github.com/traP-jp/hackathon26spring_05/Qpid/repository"
 )
 
-// var _ repository.Repository = (*repositoryImpl)(nil)
+var _ repository.Repository = (*repositoryImpl)(nil)
 
 type repositoryImpl struct {
 	db *sqlx.DB
