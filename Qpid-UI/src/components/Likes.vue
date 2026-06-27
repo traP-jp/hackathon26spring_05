@@ -6,60 +6,60 @@ import { ref, computed } from 'vue'
 // タブの切り替え状態を管理 ('liked' = Likeした人, 'likedBy' = Likeされた人)
 const activeTab = ref<'liked' | 'likedBy'>('liked')
 
-// Likeした人一覧のダミーデータ
+// Likeした人一覧のダミーデータ（バックエンドのスペルに合わせました！）
 const dummyLikedUsers = [
   { 
-    id: 1, 
-    name: 'n3', 
+    username: 'n3', 
+    displayName: 'エヌさん', 
     bio: '明日晴れますよ(断定）\nうにお願いします。（注文）' 
   },
   { 
-    id: 2, 
-    name: 'Jiro', 
+    username: 'Jiro', 
+    displayName: 'Jiro', 
     bio: 'バックエンドエンジニアです。\nGo言語が好きです。' 
   },
   { 
-    id: 3, 
-    name: 'Saburo', 
+    username: 'Saburo', 
+    displayName: 'Saburo', 
     bio: 'デザイナー兼フロントエンド。\nUI/UXにこだわりがあります!' 
   },
   { 
-    id: 4, 
-    name: 'Shiro', 
+    username: 'Shiro', 
+    displayName: 'Shiro', 
     bio: 'AIに興味があります。\nよろしくお願いします。' 
   },
   { 
-    id: 5, 
-    name: 'Goro', 
+    username: 'Goro', 
+    displayName: 'Goro', 
     bio: 'これは自己紹介文のサンプルです、パイソンはいいぞよりも長くこのままだとタブ一覧からはみ出すかもしれないので、先ほどのCSSでしっかり「...」になるかテストするための長い文章です。' 
   },
   { 
-    id: 6, 
-    name: 'Rokuro', 
+    username: 'Rokuro', 
+    displayName: 'Rokuro', 
     bio: 'プログラミング初心者です！\n楽しく開発したいです。' 
   }
 ]
 
-// Likeされた人一覧のダミーデータ（こちらも4人に設定）
+// Likeされた人一覧のダミーデータ（こちらもバックエンドのスペルに合わせました！）
 const dummyLikedByUsers = [
   { 
-    id: 101, 
-    name: 'Hanako', 
+    username: 'Hanako', 
+    displayName: 'Hanako', 
     bio: 'React派ですがVueも触ってみてます!\n仲良くしてください。' 
   },
   { 
-    id: 102, 
-    name: 'Keiko', 
+    username: 'Keiko', 
+    displayName: 'Keiko', 
     bio: '趣味はカフェ巡りです。\n休日はもくもく会によく行きます。' 
   },
   { 
-    id: 103, 
-    name: 'Mari', 
+    username: 'Mari', 
+    displayName: 'Mari', 
     bio: 'TypeScript最高!\n型がないと不安になります。' 
   },
   { 
-    id: 104, 
-    name: 'Yumi', 
+    username: 'Yumi', 
+    displayName: 'Yumi', 
     bio: 'インフラエンジニア。\nAWSメインで触ってます。' 
   }
 ]
@@ -90,9 +90,9 @@ const displayUsers = computed(() => {
     </div>
 
     <div class="cards-grid">
-      <div v-for="user in displayUsers" :key="user.id" class="card">
+      <div v-for="user in displayUsers" :key="user.username" class="card">
         <div class="icon-placeholder"></div>
-        <p class="user-name">{{ user.name }}</p>
+        <p class="user-name">{{ user.displayName }}</p>
         <p class="user-bio">{{ user.bio }}</p>
       </div>
     </div>
