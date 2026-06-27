@@ -38,16 +38,16 @@ func (h *handler) getUser(c echo.Context) error {
 	_, err := h.loginUserRetriever.GetLoginUser()
 
 	if err != nil {
-		return c.String(http.StatusInternalServerError, "failed to get login user")
+		return c.JSON(http.StatusInternalServerError, errorResponse{Message: "failed to get login user"})
 	}
 
 	// ③ データベース等からユーザーを取得
 	user, err := h.repository.FindByUsername(userID)
 	if err != nil {
-		return c.String(http.StatusInternalServerError, "failed to load user")
+		return c.JSON(http.StatusInternalServerError, errorResponse{Message: "failed to load user"})
 	}
 	if user == nil {
-		return c.String(http.StatusInternalServerError, "user not found")
+		return c.JSON(http.StatusInternalServerError, errorResponse{Message: "user not found"})
 	}
 
 	// ④ ドメインモデルを UserResponse に詰め替えてステータス200で返却
