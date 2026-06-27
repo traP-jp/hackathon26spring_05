@@ -1,6 +1,8 @@
 package handler
 
 import (
+	"net/http"
+
 	"github.com/labstack/echo/v4"
 	"github.com/traP-jp/hackathon26spring_05/Qpid/domain"
 )
@@ -33,13 +35,19 @@ func (h *handler) getUser(c echo.Context) error {
 	// ② パスパラメータから「id」を取得
 	userID := c.Param("id")
 
+	_, err := h.loginUserRetriever.GetLoginUser()
+
+	if err != nil {
+		return c.String(http.StatusInternalServerError, "failed to get login user")
+	}
+
 	// ③ データベース等からユーザーを取得
 	user, err := h.repository.FindByUsername(userID)
 	if err != nil {
-		return c.String(500, "internal server error")
+		return c.String(http.StatusInternalServerError, "failed to load user")
 	}
 	if user == nil {
-		return c.String(404, "user not found")
+		return c.String(http.StatusInternalServerError, "user not found")
 	}
 
 	// ④ ドメインモデルを UserResponse に詰め替えてステータス200で返却
