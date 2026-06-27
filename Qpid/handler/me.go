@@ -39,7 +39,7 @@ func (h *handler) getMe(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, errorResponse{Message: "failed to load user"})
 	}
 	if user == nil {
-		return notFound(c)
+		return c.JSON(http.StatusInternalServerError, errorResponse{Message: "user not found"})
 	}
 
 	return c.JSON(http.StatusOK, toMeResponse(*user))
