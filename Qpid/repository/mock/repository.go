@@ -17,32 +17,32 @@ func NewMockRepository() *MockRepository {
 }
 
 // ユーザーを作成する。
-func (r *MockRepository) Create(user domain.User) error {
+func (r *MockRepository) CreateUser(user domain.User) error {
 	return nil
 }
 
 // ユーザーを取得する。
-func (r *MockRepository) FindByUsername(username string) (*domain.User, error) {
+func (r *MockRepository) FindUserByUsername(username string) (*domain.User, error) {
 	return mockUser(username), nil
 }
 
 // プロフィールを更新する。
-func (r *MockRepository) UpdateProfile(username string, user domain.User) error {
+func (r *MockRepository) UpdateUser(username string, user domain.User) error {
 	return nil
 }
 
 // ユーザーの存在を確認する。
-func (r *MockRepository) Exists(username string) (bool, error) {
+func (r *MockRepository) IsUserExists(username string) (bool, error) {
 	return true, nil
 }
 
 // ユーザーを LIKE する。
-func (r *MockRepository) Like(fromUsername, toUsername string) error {
+func (r *MockRepository) LikeUser(fromUsername, toUsername string) error {
 	return nil
 }
 
 // ユーザーを NOPE する。
-func (r *MockRepository) Nope(fromUsername, toUsername string) error {
+func (r *MockRepository) NopeUser(fromUsername, toUsername string) error {
 	return nil
 }
 
@@ -57,7 +57,7 @@ func (r *MockRepository) ListUsersWhoLiked(username string) ([]domain.UserSummar
 }
 
 // アクション済みか確認する。
-func (r *MockRepository) HasAction(fromUsername, toUsername string) (bool, error) {
+func (r *MockRepository) IsActionExists(fromUsername, toUsername string) (bool, error) {
 	return false, nil
 }
 
@@ -102,17 +102,11 @@ func (r *MockRepository) DeleteIcon(username string) error {
 func mockUser(username string) *domain.User {
 	return &domain.User{
 		Username:     username,
-		IconFileID:   optional.None[string](),
+		HasIcon:      false,
 		Major:        optional.None[string](),
-		Affiliations: []string{"sysad"},
+		Affiliations: []domain.UserAffiliation{domain.UserAffiliationSysAd},
 		Hometown:     optional.None[string](),
-		Tags: map[string]domain.Tag{
-			"go": {
-				Label:    optional.Some("programmingLanguage"),
-				Affinity: domain.TagAffinityPositive,
-				Strength: 0.8,
-			},
-		},
-		Bio: optional.Some("mock user"),
+		Tags:         []string{"go"},
+		Bio:          optional.Some("mock user"),
 	}
 }

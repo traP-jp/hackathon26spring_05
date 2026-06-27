@@ -21,7 +21,7 @@ func AuthenticationMiddleware(env *env.Env, repo repository.Repository) echo.Mid
 					return echo.ErrUnauthorized
 				}
 
-				exists, err := repo.Exists(username)
+				exists, err := repo.IsUserExists(username)
 				if err != nil {
 					return echo.ErrInternalServerError
 				}
