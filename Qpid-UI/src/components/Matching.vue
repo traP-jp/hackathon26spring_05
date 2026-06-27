@@ -54,7 +54,8 @@ const dummyUsers: UserProfile[] = [
 ]
 
 const currentUserIndex = ref(0)
-const currentUser = ref<UserProfile | null | undefined>(dummyUsers[0])
+const currentUser = ref<UserProfile | null>(null)
+const users = ref<UserProfile[]>([])
 // 2. ジェスチャー・操作の管理用変数
 let startX = 0
 let isDragging = false
@@ -118,6 +119,30 @@ const handleKeyDown = (e: KeyboardEvent) => {
   } else if (e.key === 'ArrowLeft') {
     handleAction('Nope')
   }
+}
+
+const getReccomend = async() =>{
+  try{
+    //const response = await fetch(`https://qpid.trap.show/api/me`,{
+    const response = await fetch(`/api/suggestions`,{
+      method: "GET",
+      headers:{
+        "content-type":"application/json"
+      },
+    });
+
+    if(!response.ok){
+      console.log("Error : Not OK")
+    }
+    // const errorText = await response.text();
+    // console.log("バックエンドから返ってきた生の文字:", errorText);
+    const userData = await response.json();
+    console.log("APIから取得したデータ:", userData)
+    
+  }catch(error){
+    console.log("Error : ",error)
+    toast.error("通信エラーが発生しました")
+}
 }
 
 onMounted(() => {
