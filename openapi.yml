@@ -5,7 +5,7 @@ info:
 servers:
   - url: http://localhost:8080/api
 security:
-  - cookieAuth: []
+  - forwardedUserAuth: []
 tags:
   - name: auth
     description: Authentication and account lifecycle
@@ -16,40 +16,6 @@ tags:
   - name: suggestions
     description: Recommended users
 paths:
-  /login:
-    get:
-      security: []
-      tags:
-        - auth
-      summary: ログイン開始
-      operationId: startLogin
-      responses:
-        '302':
-          description: OAuth2 providerへリダイレクトする
-          headers:
-            Location:
-              description: OAuth2 authorization URL
-              schema:
-                type: string
-                format: uri
-  /login/callback:
-    post:
-      security: []
-      tags:
-        - auth
-      summary: OAuth2 コールバック
-      operationId: loginCallback
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/OAuth2CallbackRequest'
-      responses:
-        '204':
-          description: ログイン成功
-        '400':
-          $ref: '#/components/responses/BadRequest'
   /signup:
     post:
       security: []
@@ -72,16 +38,6 @@ paths:
                 $ref: '#/components/schemas/User'
         '400':
           $ref: '#/components/responses/BadRequest'
-  /logout:
-    post:
-      security: []
-      tags:
-        - auth
-      summary: ログアウト
-      operationId: logout
-      responses:
-        '204':
-          description: ログアウト成功
   /me:
     get:
       tags:
@@ -234,25 +190,12 @@ paths:
           $ref: '#/components/responses/Unauthorized'
 components:
   securitySchemes:
-    cookieAuth:
+    forwardedUserAuth:
       type: apiKey
-      in: cookie
-      name: session
-      description: 認証用セッションCookie
+      in: header
+      name: X-Forwarded-User
+      description: 認証済みユーザー名を表すリバースプロキシ由来のヘッダー
   schemas:
-    OAuth2CallbackRequest:
-      type: object
-      required:
-        - code
-        - state
-      properties:
-        code:
-          type: string
-          description: OAuth2 authorization code
-        state:
-          type: string
-          description: CSRF対策用state
-      additionalProperties: false
     SignupRequest:
       type: object
       required:

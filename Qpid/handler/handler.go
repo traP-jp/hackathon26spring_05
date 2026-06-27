@@ -6,36 +6,36 @@ import (
 
 	"github.com/gorilla/sessions"
 	"github.com/labstack/echo/v4"
-	"github.com/traP-jp/hackathon26spring_05/Qpid/domain"
+	echoMiddleware "github.com/labstack/echo/v4/middleware"
+	"github.com/traP-jp/hackathon26spring_05/Qpid/env"
 	"github.com/traP-jp/hackathon26spring_05/Qpid/handler/middleware"
+	"github.com/traP-jp/hackathon26spring_05/Qpid/infrastructure"
 	"github.com/traP-jp/hackathon26spring_05/Qpid/repository"
 	"github.com/traP-jp/hackathon26spring_05/Qpid/repository/mock"
 )
 
 type handler struct {
+	env        env.Env
 	repository repository.Repository
 	sessions   sessions.Store
-	// middlewares
-	loginUserRetriever domain.LoginUserRetriever
 }
 
 func Serve() {
 	e := echo.New()
 
-	// _, err := infrastructure.NewDB()
-	// if err != nil {
-	// 	e.Logger.Fatal(err)
-	// 	return
-	// }
-
+	_, err := infrastructure.NewDB()
+	if err != nil {
+		e.Logger.Fatal(err)
+		return
+	}
 	repo := mock.NewMockRepository()
 
 	h := &handler{
+		env:        env.GetEnv(),
 		repository: repo,
 		sessions: sessions.NewCookieStore([]byte(
 			cmp.Or(os.Getenv("SESSION_SECRET"), "secret"),
 		)),
-		loginUserRetriever: middleware.GetLoginUserRetriever(),
 	}
 
 	h.mapRoutes(e)
@@ -43,28 +43,29 @@ func Serve() {
 }
 
 func (h *handler) mapRoutes(e *echo.Echo) {
-	api := e.Group("/api")
+	api := e.Group("/api",
+		echoMiddleware.RequestLogger(),
+		echoMiddleware.Recover())
 	{
-		login := api.Group("/login")
-		{
-			login.GET("", h.startLogin)
-			login.POST("/callback", h.loginCallback)
-		}
 		api.POST("/signup", h.signup)
-		api.POST("/logout", h.logout)
-		me := api.Group("/me")
+
+		// 認証が必要な API 群
+		authenticated := api.Group("", middleware.AuthenticationMiddleware(&h.env, h.repository))
 		{
-			me.GET("", h.getMe)
-			me.PUT("", h.updateMe)
-			me.GET("/likes", h.listMyLikes)
-			me.POST("/likes", h.likeUser)
-			me.GET("/liked-by", h.listUsersWhoLikedMe)
-			me.POST("/nopes", h.nopeUser)
+			me := authenticated.Group("/me")
+			{
+				me.GET("", h.getMe)
+				me.PUT("", h.updateMe)
+				me.GET("/likes", h.listMyLikes)
+				me.POST("/likes", h.likeUser)
+				me.GET("/liked-by", h.listUsersWhoLikedMe)
+				me.POST("/nopes", h.nopeUser)
+			}
+			users := authenticated.Group("/users")
+			{
+				users.GET("/:id", h.getUser)
+			}
+			authenticated.GET("/suggestions", h.listSuggestions)
 		}
-		users := api.Group("/users")
-		{
-			users.GET("/:id", h.getUser)
-		}
-		api.GET("/suggestions", h.listSuggestions)
 	}
 }
