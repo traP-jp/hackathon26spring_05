@@ -31,6 +31,19 @@ type TopicAndValue struct {
 	Value string
 }
 
+// UserOverride は事前計算済みプロフィールによるユーザー情報の上書き値。
+// optional.Option は「未指定」と「空文字での指定」を区別するために使う。
+type UserOverride struct {
+	Major         optional.Option[string]
+	Affiliations  []UserAffiliation
+	Hometown      optional.Option[string]
+	Tags          []string
+	Technologies  []string
+	Bio           optional.Option[string]
+	FavoriteTopic optional.Option[TopicAndValue]
+	DislikedTopic optional.Option[TopicAndValue]
+}
+
 type UserAffiliation string
 
 const (

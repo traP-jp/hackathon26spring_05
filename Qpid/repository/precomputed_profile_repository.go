@@ -5,5 +5,5 @@ import "github.com/traP-jp/hackathon26spring_05/Qpid/domain"
 // 事前計算済みプロフィールを読み込む
 type PrecomputedProfileRepository interface {
 	// 事前計算済みプロフィールを取得する
-	FindPrecomputedProfileByUsername(username string) (*domain.User, error)
+	FindPrecomputedProfileByUsername(username string) (*domain.UserOverride, error)
 }

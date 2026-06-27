@@ -45,12 +45,13 @@ func Serve() {
 func (h *handler) mapRoutes(e *echo.Echo) {
 	api := e.Group("/api",
 		echoMiddleware.RequestLogger(),
-		echoMiddleware.Recover())
+		echoMiddleware.Recover(),
+		middleware.UsernameExtractorMiddleware(&h.env))
 	{
 		api.POST("/signup", h.signup)
 
 		// 認証が必要な API 群
-		authenticated := api.Group("", middleware.AuthenticationMiddleware(&h.env, h.repository))
+		authenticated := api.Group("", middleware.AuthenticationMiddleware(h.repository))
 		{
 			me := authenticated.Group("/me")
 			{
