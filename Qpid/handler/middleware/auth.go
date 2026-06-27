@@ -45,6 +45,20 @@ func AuthenticationMiddleware(repo repository.Repository) echo.MiddlewareFunc {
 					&errorResponse{"Unauthorized"},
 				)
 			}
+			exists, err := repo.IsUserExists(*username)
+			if err != nil {
+				c.Logger().Errorf("failed to check if user %s exists: %v", *username, err)
+				return echo.NewHTTPError(
+					http.StatusInternalServerError,
+					&errorResponse{"Failed to check if user exists"},
+				)
+			}
+			if !exists {
+				return echo.NewHTTPError(
+					http.StatusUnauthorized,
+					&errorResponse{"Unauthorized"},
+				)
+			}
 			return next(c)
 		}
 	}

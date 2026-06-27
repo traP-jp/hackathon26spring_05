@@ -30,10 +30,25 @@ func (h *handler) signup(c echo.Context) error {
 	}
 
 	username := middleware.GetUsername(c)
-	if username != nil {
+	if username == nil {
 		return echo.NewHTTPError(
-			http.StatusBadRequest,
-			&errorResponse{"Already signed up"},
+			http.StatusUnauthorized,
+			&errorResponse{"You must be logged in to traQ to sign up"},
+		)
+	}
+
+	exists, err := h.repository.IsUserExists(*username)
+	if err != nil {
+		c.Logger().Errorf("failed to check if user %s exists: %v", username, err)
+		return echo.NewHTTPError(
+			http.StatusInternalServerError,
+			&errorResponse{"Failed to check if user exists"},
+		)
+	}
+	if exists {
+		return echo.NewHTTPError(
+			http.StatusConflict,
+			&errorResponse{"User already exists"},
 		)
 	}
 
@@ -58,7 +73,7 @@ func (h *handler) signup(c echo.Context) error {
 			&errorResponse{"Failed to create user"},
 		)
 	}
-	return c.JSON(http.StatusOK, toUserResponse(newUser))
+	return c.JSON(http.StatusCreated, toUserResponse(newUser))
 }
 
 func mergeUserProfile(base domain.User, override *domain.UserOverride) domain.User {
@@ -91,6 +106,15 @@ func mergeUserProfile(base domain.User, override *domain.UserOverride) domain.Us
 			base.Tags = []string{}
 		}
 		base.Tags = distinctValues(append(base.Tags, override.Tags...))
+	}
+	if len(override.Technologies) > 0 {
+		base.Technologies = distinctValues(append(base.Technologies, override.Technologies...))
+	}
+	if override.FavoriteTopic.IsSome() {
+		base.FavoriteTopic = override.FavoriteTopic
+	}
+	if override.DislikedTopic.IsSome() {
+		base.DislikedTopic = override.DislikedTopic
 	}
 	return base
 }
