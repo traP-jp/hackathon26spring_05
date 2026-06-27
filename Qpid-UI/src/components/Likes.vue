@@ -6,8 +6,10 @@ const activeTab = ref<'liked' | 'likedBy'>('liked')
 
 // バックエンドの UserSummary 型の定義
 interface UserSummary {
+
   username: string    // DBの PRIMARY KEY
   name: string        // サークルの人の名前（消さずに残しました！）
+
   bio?: string
 }
 
