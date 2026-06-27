@@ -1,56 +1,69 @@
 package handler
 
-import "github.com/labstack/echo/v4"
+import (
+	"github.com/labstack/echo/v4"
+	"github.com/traP-jp/hackathon26spring_05/Qpid/domain"
+)
 
-// タグに対する好き嫌いの型（domainの定義をそのまま使えるなら domain.TagAffinity に置き換えてください）
+// タグに対する好き嫌いの型
 type TagResponse struct {
-	Label    string  `json:"label"`
-	Affinity string  `json:"affinity"` // "positive", "neutral", "negative"
-	Strength float64 `json:"strength"`
+	Label    string             `json:"label"`
+	Affinity domain.TagAffinity `json:"affinity"` // "positive", "neutral", "negative"
+	Strength float64            `json:"strength"`
 }
 
 // domain.User の定義に沿った、最終的なJSONレスポンスの型
 type UserResponse struct {
 	Username     string                 `json:"username"`
-	IconFileID   *string                `json:"iconFileId"` // nil の可能性あり
-	Major        *string                `json:"major"`      // nil の可能性あり
+	IconFileID   string                 `json:"iconFileId"`
+	Major        string                 `json:"major"`
 	Affiliations []string               `json:"affiliations"`
-	Hometown     *string                `json:"hometown"`   // nil の可能性あり
+	Hometown     string                 `json:"hometown"`
 	Tags         map[string]TagResponse `json:"tags"`
 	Bio          string                 `json:"bio"`
 }
 
 // GET /api/users/:id
 func (h *handler) getUser(c echo.Context) error {
-	// ① パスパラメータから「id」を取得
-	userID := c.Param("id")
-
-	// ポインタ型に値を代入するための補助変数
-	major := "情報理工学系"
-	hometown := "東京"
-
-	// ② ドメインモデルに沿った詳細なモックデータ（仮データ）を作成
-	mockUser := UserResponse{
-		Username:     userID,
-		IconFileID:   nil, // 初期状態としてnilをテスト
-		Major:        &major,
-		Affiliations: []string{"開発班", "グラフィック班"},
-		Hometown:     &hometown,
-		Tags: map[string]TagResponse{
-			"Go言語": {
-				Label:    "プログラミング言語",
-				Affinity: "positive",
-				Strength: 4.5,
-			},
-			"早起き": {
-				Label:    "生活習慣",
-				Affinity: "negative",
-				Strength: 1.2,
-			},
-		},
-		Bio: "こんにちは！ハッカソン頑張りましょう！",
+	// ① ログインチェックを追加
+	if !h.loginUserRetriever.IsUserLoggedIn() {
+		return unauthorized(c)
 	}
 
-	// ③ ステータス200（成功）と、詳細なJSONデータを返却
-	return c.JSON(200, mockUser)
+	// ② パスパラメータから「id」を取得
+	userID := c.Param("id")
+
+	// ③ データベース等からユーザーを取得
+	mockUser, err := h.repository.FindByUsername(userID)
+	if err != nil {
+		return c.String(404, "対象が見つからない")
+	}
+	if mockUser == nil {
+		return c.String(404, "対象が見つからない")
+	}
+
+	// ④ ドメインモデルを UserResponse に詰め替えてステータス200で返却
+	return c.JSON(200, toUserResponse(*mockUser))
+}
+
+// domain.User から UserResponse へ変換するヘルパー関数
+func toUserResponse(user domain.User) UserResponse {
+	tags := make(map[string]TagResponse, len(user.Tags))
+	for name, userTag := range user.Tags {
+		tags[name] = TagResponse{
+			Label:    userTag.Label,
+			Affinity: userTag.Affinity, // domain.TagAffinity 型のまま代入
+			Strength: userTag.Strength,
+		}
+	}
+
+	return UserResponse{
+		Username:     user.Username,
+		IconFileID:   user.IconFileID,
+		Major:        user.Major,
+		Affiliations: user.Affiliations,
+		Hometown:     user.Hometown,
+		Tags:         tags,
+		Bio:          user.Bio,
+	}
 }
