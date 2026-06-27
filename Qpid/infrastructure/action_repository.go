@@ -23,7 +23,12 @@ func (r *repositoryImpl) NopeUser(fromUsername, toUsername string) error {
 
 // LIKE したユーザーを取得する。
 func (r *repositoryImpl) ListLikedUsers(username string) ([]domain.UserSummary, error) {
-	return nil, nil
+	var users []domain.UserSummary
+	err := r.db.Select(&users,
+		`SELECT to_username AS username FROM actions WHERE from_username = ? AND status = ?`,
+		username, actionStatusLike,
+	)
+	return users, err
 }
 
 // LIKE してくれたユーザーを取得する。
