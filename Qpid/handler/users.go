@@ -44,11 +44,12 @@ func (h *handler) getUser(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, errorResponse{Message: "failed to load user"})
 	}
 	if user == nil {
-		return c.JSON(http.StatusInternalServerError, errorResponse{Message: "user not found"})
+		//調べようとしてるユーザーが見つからないケース
+		return notFound(c)
 	}
 
 	// ④ ドメインモデルを UserResponse に詰め替えてステータス200で返却
-	return c.JSON(200, toUserResponse(*user))
+	return c.JSON(http.StatusOK, toUserResponse(*user))
 }
 
 // domain.User から UserResponse へ変換するヘルパー関数
