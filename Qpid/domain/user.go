@@ -5,13 +5,13 @@ type User struct {
 	// ユーザー ID
 	Username string
 	// アイコン画像 ID; nil の場合は traQ のアイコンを参照する
-	IconFileID *string
+	IconFileID string
 	// 学部または系
-	Major *string
+	Major string
 	// 所属班の一覧
 	Affiliations []string
 	// 出身地
-	Hometown *string
+	Hometown string
 	// タグ名をキーにしたタグ情報
 	Tags map[string]Tag
 	// 自己紹介文
