@@ -5,40 +5,19 @@ import (
 	"net/http"
 
 	"github.com/labstack/echo/v4"
+	"github.com/moznion/go-optional"
 	"github.com/traP-jp/hackathon26spring_05/Qpid/domain"
 	"github.com/traP-jp/hackathon26spring_05/Qpid/handler/middleware"
 )
 
-type tag struct {
-	Label    string  `json:"label"`
-	Affinity string  `json:"affinity"`
-	Strength float64 `json:"strength"`
-}
-
-type meResponse struct {
-	Username     string         `json:"username"`
-	IconFileID   string         `json:"iconFileId"`
-	Major        string         `json:"major"`
-	Affiliations []string       `json:"affiliations"`
-	Hometown     string         `json:"hometown"`
-	Tags         map[string]tag `json:"tags"`
-	Bio          string         `json:"bio"`
-}
-
 // GET /api/me
 func (h *handler) getMe(c echo.Context) error {
-	loginUserRetriever := middleware.GetLoginUserRetriever(c)
-
-	if !loginUserRetriever.IsUserLoggedIn() {
+	username := middleware.GetUsername(c)
+	if username == nil {
 		return unauthorized(c)
 	}
 
-	username, err := loginUserRetriever.GetLoginUser()
-	if err != nil {
-		return c.JSON(http.StatusInternalServerError, errorResponse{Message: "failed to get login user"})
-	}
-
-	user, err := h.repository.FindByUsername(username)
+	user, err := h.repository.FindUserByUsername(*username)
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, errorResponse{Message: "failed to load user"})
 	}
@@ -46,86 +25,67 @@ func (h *handler) getMe(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, errorResponse{Message: "user not found"})
 	}
 
-	return c.JSON(http.StatusOK, toMeResponse(*user))
+	return c.JSON(http.StatusOK, toUserResponse(*user))
 }
 
-func toMeResponse(user domain.User) *meResponse { //FindByUsernameで取得したデータをuserをjsonにして返す用
-	tags := make(map[string]tag, len(user.Tags))
-	for name, userTag := range user.Tags {
-		tags[name] = tag{
-			Label:    userTag.Label,
-			Affinity: string(userTag.Affinity),
-			Strength: userTag.Strength,
-		}
-	}
-
-	return &meResponse{
-		Username:     user.Username,
-		IconFileID:   user.IconFileID,
-		Major:        user.Major,
-		Affiliations: user.Affiliations,
-		Hometown:     user.Hometown,
-		Tags:         tags,
-		Bio:          user.Bio,
-	}
+type updateMeRequest struct {
+	HasIcon       bool                                 `json:"hasIcon"`
+	Major         optional.Option[string]              `json:"major"`
+	Affiliations  []domain.UserAffiliation             `json:"affiliations"`
+	Hometown      optional.Option[string]              `json:"hometown"`
+	Tags          []string                             `json:"tags"`
+	Technologies  []string                             `json:"technologies"`
+	Bio           optional.Option[string]              `json:"bio"`
+	FavoriteTopic optional.Option[updateTopicAndValue] `json:"favoriteTopic"`
+	DislikedTopic optional.Option[updateTopicAndValue] `json:"dislikedTopic"`
 }
 
-type meRequest struct {
-	IconFileID   string         `json:"iconFileId"`
-	Major        string         `json:"major"`
-	Affiliations []string       `json:"affiliations"`
-	Hometown     string         `json:"hometown"`
-	Tags         map[string]tag `json:"tags"`
-	Bio          string         `json:"bio"`
+type updateTopicAndValue struct {
+	Topic string `json:"topic"`
+	Value string `json:"value"`
+}
+
+func toDomainTopicAndValue(updateTopicAndValue optional.Option[updateTopicAndValue]) optional.Option[domain.TopicAndValue] {
+	if updateTopicAndValue.IsNone() {
+		return optional.None[domain.TopicAndValue]()
+	}
+	updateTopicAndValueValue := updateTopicAndValue.Unwrap()
+	return optional.Some(domain.TopicAndValue{
+		Topic: updateTopicAndValueValue.Topic,
+		Value: updateTopicAndValueValue.Value,
+	})
 }
 
 // PUT /api/me
 func (h *handler) updateMe(c echo.Context) error {
-	loginUserRetriever := middleware.GetLoginUserRetriever(c)
-
-	if !loginUserRetriever.IsUserLoggedIn() {
+	username := middleware.GetUsername(c)
+	if username == nil {
 		return unauthorized(c)
 	}
 
-	username, err := loginUserRetriever.GetLoginUser()
-	if err != nil {
-		return c.JSON(http.StatusInternalServerError, errorResponse{Message: "failed to get login user"})
-	}
-
-	data := &meRequest{}
+	data := &updateMeRequest{}
 	if err := c.Bind(data); err != nil {
 		return c.JSON(http.StatusBadRequest, errorResponse{Message: "invalid request body"})
 	}
 
-	tags := make(map[string]domain.Tag, len(data.Tags))
-	for name, t := range data.Tags {
-		aff := domain.TagAffinity(t.Affinity)
-		switch aff {
-		case domain.TagAffinityPositive, domain.TagAffinityNeutral, domain.TagAffinityNegative:
-		default:
-			return c.JSON(http.StatusBadRequest, errorResponse{Message: "invalid tag affinity"})
-		}
-		tags[name] = domain.Tag{
-			Label:    t.Label,
-			Affinity: aff,
-			Strength: t.Strength,
-		}
-	}
 	userData := domain.User{
-		Username:     username,
-		IconFileID:   data.IconFileID,
-		Major:        data.Major,
-		Affiliations: data.Affiliations,
-		Hometown:     data.Hometown,
-		Tags:         tags,
-		Bio:          data.Bio,
+		Username:      *username,
+		HasIcon:       data.HasIcon,
+		Major:         data.Major,
+		Affiliations:  data.Affiliations,
+		Hometown:      data.Hometown,
+		Tags:          data.Tags,
+		Technologies:  data.Technologies,
+		Bio:           data.Bio,
+		FavoriteTopic: toDomainTopicAndValue(data.FavoriteTopic),
+		DislikedTopic: toDomainTopicAndValue(data.DislikedTopic),
 	}
 
-	if err := h.repository.UpdateProfile(username, userData); err != nil {
+	if err := h.repository.UpdateUser(*username, userData); err != nil {
 		return c.JSON(http.StatusInternalServerError, errorResponse{Message: "failed to update user"})
 	}
 
-	return c.JSON(http.StatusOK, toMeResponse(userData))
+	return c.JSON(http.StatusOK, toUserResponse(userData))
 }
 
 type userSummaryResponse struct {
@@ -146,18 +106,12 @@ func toUserSummaryResponses(users []domain.UserSummary) ([]userSummaryResponse, 
 
 // GET /api/me/likes
 func (h *handler) listMyLikes(c echo.Context) error {
-	loginUserRetriever := middleware.GetLoginUserRetriever(c)
-
-	if !loginUserRetriever.IsUserLoggedIn() {
+	username := middleware.GetUsername(c)
+	if username == nil {
 		return unauthorized(c)
 	}
 
-	username, err := loginUserRetriever.GetLoginUser()
-	if err != nil {
-		return c.JSON(http.StatusInternalServerError, errorResponse{Message: "failed to get login user"})
-	}
-
-	users, err := h.repository.ListLikedUsers(username)
+	users, err := h.repository.ListLikedUsers(*username)
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, errorResponse{Message: "failed to list liked users"})
 	}
@@ -166,7 +120,6 @@ func (h *handler) listMyLikes(c echo.Context) error {
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, errorResponse{Message: "failed to validate liked users"})
 	}
-
 	return c.JSON(http.StatusOK, result)
 }
 
@@ -176,15 +129,9 @@ type userActionRequest struct {
 
 // POST /api/me/likes
 func (h *handler) likeUser(c echo.Context) error {
-	loginUserRetriever := middleware.GetLoginUserRetriever(c)
-
-	if !loginUserRetriever.IsUserLoggedIn() {
+	username := middleware.GetUsername(c)
+	if username == nil {
 		return unauthorized(c)
-	}
-
-	username, err := loginUserRetriever.GetLoginUser()
-	if err != nil {
-		return c.JSON(http.StatusInternalServerError, errorResponse{Message: "failed to get login user"})
 	}
 
 	toUser := &userActionRequest{}
@@ -195,11 +142,11 @@ func (h *handler) likeUser(c echo.Context) error {
 	if toUser.Username == "" {
 		return c.JSON(http.StatusBadRequest, errorResponse{Message: "username is required"})
 	}
-	if toUser.Username == username {
+	if toUser.Username == *username {
 		return c.JSON(http.StatusBadRequest, errorResponse{Message: "cannot like yourself"})
 	}
 
-	isExist, err := h.repository.Exists(toUser.Username)
+	isExist, err := h.repository.IsUserExists(toUser.Username)
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, errorResponse{Message: "failed to check user existence"})
 	}
@@ -207,7 +154,7 @@ func (h *handler) likeUser(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, errorResponse{Message: "user does not exist"})
 	}
 
-	if err = h.repository.Like(username, toUser.Username); err != nil {
+	if err = h.repository.LikeUser(*username, toUser.Username); err != nil {
 		return c.JSON(http.StatusInternalServerError, errorResponse{Message: "failed to like user"})
 	}
 
@@ -216,15 +163,9 @@ func (h *handler) likeUser(c echo.Context) error {
 
 // GET /api/me/liked-by
 func (h *handler) listUsersWhoLikedMe(c echo.Context) error {
-	loginUserRetriever := middleware.GetLoginUserRetriever(c)
-
-	if !loginUserRetriever.IsUserLoggedIn() {
+	username := middleware.GetUsername(c)
+	if username == nil {
 		return unauthorized(c)
-	}
-
-	username, err := loginUserRetriever.GetLoginUser()
-	if err != nil {
-		return c.JSON(http.StatusInternalServerError, errorResponse{Message: "failed to get login user"})
 	}
 
 	toUser := &userActionRequest{}
@@ -235,11 +176,11 @@ func (h *handler) listUsersWhoLikedMe(c echo.Context) error {
 	if toUser.Username == "" {
 		return c.JSON(http.StatusBadRequest, errorResponse{Message: "username is required"})
 	}
-	if toUser.Username == username {
+	if toUser.Username == *username {
 		return c.JSON(http.StatusBadRequest, errorResponse{Message: "cannot like yourself"})
 	}
 
-	users, err := h.repository.ListUsersWhoLiked(username)
+	users, err := h.repository.ListUsersWhoLiked(*username)
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, errorResponse{Message: "failed to list users who liked me"})
 	}
@@ -254,15 +195,9 @@ func (h *handler) listUsersWhoLikedMe(c echo.Context) error {
 
 // POST /api/me/nopes
 func (h *handler) nopeUser(c echo.Context) error {
-	loginUserRetriever := middleware.GetLoginUserRetriever(c)
-
-	if !loginUserRetriever.IsUserLoggedIn() {
+	username := middleware.GetUsername(c)
+	if username == nil {
 		return unauthorized(c)
-	}
-
-	username, err := loginUserRetriever.GetLoginUser()
-	if err != nil {
-		return c.JSON(http.StatusInternalServerError, errorResponse{Message: "failed to get login user"})
 	}
 
 	toUser := &userActionRequest{}
@@ -273,11 +208,11 @@ func (h *handler) nopeUser(c echo.Context) error {
 	if toUser.Username == "" {
 		return c.JSON(http.StatusBadRequest, errorResponse{Message: "username is required"})
 	}
-	if toUser.Username == username {
+	if toUser.Username == *username {
 		return c.JSON(http.StatusBadRequest, errorResponse{Message: "cannot nope yourself"})
 	}
 
-	isExist, err := h.repository.Exists(toUser.Username)
+	isExist, err := h.repository.IsUserExists(toUser.Username)
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, errorResponse{Message: "failed to check user existence"})
 	}
@@ -285,7 +220,7 @@ func (h *handler) nopeUser(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, errorResponse{Message: "user does not exist"})
 	}
 
-	if err = h.repository.Nope(username, toUser.Username); err != nil {
+	if err = h.repository.NopeUser(*username, toUser.Username); err != nil {
 		return c.JSON(http.StatusInternalServerError, errorResponse{Message: "failed to nope user"})
 	}
 

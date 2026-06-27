@@ -1,41 +1,44 @@
 package domain
 
+import "github.com/moznion/go-optional"
+
 // ユーザープロフィール
 type User struct {
 	// ユーザー ID
 	Username string
-	// アイコン画像 ID; nil の場合は traQ のアイコンを参照する
-	IconFileID string
+	// Qpidにアップロードされたアイコンがあるかどうか
+	HasIcon bool
 	// 学部または系
-	Major string
+	Major optional.Option[string]
 	// 所属班の一覧
-	Affiliations []string
+	Affiliations []UserAffiliation
 	// 出身地
-	Hometown string
-	// タグ名をキーにしたタグ情報
-	Tags map[string]Tag
+	Hometown optional.Option[string]
+	// タグ
+	Tags []string
+	// よく使う技術
+	Technologies []string
 	// 自己紹介文
-	Bio string
+	Bio optional.Option[string]
+	// 好きな〇〇
+	FavoriteTopic optional.Option[TopicAndValue]
+	// 嫌いな〇〇
+	DislikedTopic optional.Option[TopicAndValue]
 }
 
-// プロフィールから抽出された興味や属性の情報
-type Tag struct {
-	// 好きなものや嫌いなものの分類
-	Label string
-	// タグに対する好き嫌い
-	Affinity TagAffinity
-	// 言及回数に対して単調増加する強度
-	Strength float64
+type TopicAndValue struct {
+	Topic string
+	Value string
 }
 
-// タグに対する好き嫌い
-type TagAffinity string
+type UserAffiliation string
 
 const (
-	// 好意的なタグ
-	TagAffinityPositive TagAffinity = "positive"
-	// 中立的なタグ
-	TagAffinityNeutral TagAffinity = "neutral"
-	// 否定的なタグ
-	TagAffinityNegative TagAffinity = "negative"
+	UserAffiliationAlgorithm UserAffiliation = "algorithm"
+	UserAffiliationCtf       UserAffiliation = "ctf"
+	UserAffiliationGame      UserAffiliation = "game"
+	UserAffiliationGraphics  UserAffiliation = "graphics"
+	UserAffiliationKaggle    UserAffiliation = "kaggle"
+	UserAffiliationSound     UserAffiliation = "sound"
+	UserAffiliationSysAd     UserAffiliation = "sysad"
 )

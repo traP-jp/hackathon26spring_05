@@ -20,7 +20,7 @@ func toSuggestionResponses(suggestions []domain.Suggestion) ([]suggestionRespons
 		if suggestion.Username == "" {
 			return nil, errors.New("invalid suggestion")
 		}
-		if !(suggestion.Similarity <= 0 && suggestion.Similarity <= 1) {
+		if !(suggestion.Similarity >= 0 && suggestion.Similarity <= 1) {
 			return nil, errors.New("invalid suggestion similarity")
 		}
 		result[i] = suggestionResponse{
@@ -34,17 +34,12 @@ func toSuggestionResponses(suggestions []domain.Suggestion) ([]suggestionRespons
 
 // GET /api/suggestions
 func (h *handler) listSuggestions(c echo.Context) error {
-	loginUserRetriever := middleware.GetLoginUserRetriever(c)
-	if !loginUserRetriever.IsUserLoggedIn() {
+	username := middleware.GetUsername(c)
+	if username == nil {
 		return unauthorized(c)
 	}
 
-	username, err := loginUserRetriever.GetLoginUser()
-	if err != nil {
-		return c.JSON(http.StatusInternalServerError, errorResponse{Message: "failed to get login user"})
-	}
-
-	suggestions, err := h.repository.ListSuggestions(username, 20)
+	suggestions, err := h.repository.ListSuggestions(*username, 20)
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, errorResponse{Message: "failed to list suggestions"})
 	}

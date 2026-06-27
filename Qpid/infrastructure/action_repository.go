@@ -3,12 +3,12 @@ package infrastructure
 import "github.com/traP-jp/hackathon26spring_05/Qpid/domain"
 
 // ユーザーを LIKE する。
-func (r *repositoryImpl) Like(fromUsername, toUsername string) error {
+func (r *repositoryImpl) LikeUser(fromUsername, toUsername string) error {
 	return nil
 }
 
 // ユーザーを NOPE する。
-func (r *repositoryImpl) Nope(fromUsername, toUsername string) error {
+func (r *repositoryImpl) NopeUser(fromUsername, toUsername string) error {
 	return nil
 }
 
@@ -23,6 +23,6 @@ func (r *repositoryImpl) ListUsersWhoLiked(username string) ([]domain.UserSummar
 }
 
 // アクション済みか確認する。
-func (r *repositoryImpl) HasAction(fromUsername, toUsername string) (bool, error) {
+func (r *repositoryImpl) IsActionExists(fromUsername, toUsername string) (bool, error) {
 	return false, nil
 }

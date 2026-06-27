@@ -1,8 +1,7 @@
 package mock
 
 import (
-	"time"
-
+	"github.com/moznion/go-optional"
 	"github.com/traP-jp/hackathon26spring_05/Qpid/domain"
 	"github.com/traP-jp/hackathon26spring_05/Qpid/repository"
 )
@@ -18,32 +17,32 @@ func NewMockRepository() *MockRepository {
 }
 
 // ユーザーを作成する。
-func (r *MockRepository) Create(user domain.User) error {
+func (r *MockRepository) CreateUser(user domain.User) error {
 	return nil
 }
 
 // ユーザーを取得する。
-func (r *MockRepository) FindByUsername(username string) (*domain.User, error) {
+func (r *MockRepository) FindUserByUsername(username string) (*domain.User, error) {
 	return mockUser(username), nil
 }
 
 // プロフィールを更新する。
-func (r *MockRepository) UpdateProfile(username string, user domain.User) error {
+func (r *MockRepository) UpdateUser(username string, user domain.User) error {
 	return nil
 }
 
 // ユーザーの存在を確認する。
-func (r *MockRepository) Exists(username string) (bool, error) {
+func (r *MockRepository) IsUserExists(username string) (bool, error) {
 	return true, nil
 }
 
 // ユーザーを LIKE する。
-func (r *MockRepository) Like(fromUsername, toUsername string) error {
+func (r *MockRepository) LikeUser(fromUsername, toUsername string) error {
 	return nil
 }
 
 // ユーザーを NOPE する。
-func (r *MockRepository) Nope(fromUsername, toUsername string) error {
+func (r *MockRepository) NopeUser(fromUsername, toUsername string) error {
 	return nil
 }
 
@@ -58,7 +57,7 @@ func (r *MockRepository) ListUsersWhoLiked(username string) ([]domain.UserSummar
 }
 
 // アクション済みか確認する。
-func (r *MockRepository) HasAction(fromUsername, toUsername string) (bool, error) {
+func (r *MockRepository) IsActionExists(fromUsername, toUsername string) (bool, error) {
 	return false, nil
 }
 
@@ -100,46 +99,15 @@ func (r *MockRepository) DeleteIcon(username string) error {
 	return nil
 }
 
-// 認証セッションを作成する。
-func (r *MockRepository) CreateAuthSession(sessionID string, session domain.AuthSession) error {
-	return nil
-}
-
-// 認証セッションを取得する。
-func (r *MockRepository) FindAuthSession(sessionID string) (*domain.AuthSession, error) {
-	return &domain.AuthSession{
-		Username:    "mock-user",
-		AccessToken: "mock-access-token",
-		ExpiresAt:   time.Now().Add(time.Hour),
-	}, nil
-}
-
-// 認証セッションを削除する。
-func (r *MockRepository) DeleteAuthSession(sessionID string) error {
-	return nil
-}
-
-// OAuth2 state を作成する。
-func (r *MockRepository) CreateOAuthState(state string, expiresAt time.Time) error {
-	return nil
-}
-
-// OAuth2 state を消費する。
-func (r *MockRepository) ConsumeOAuthState(state string) error {
-	return nil
-}
-
 func mockUser(username string) *domain.User {
 	return &domain.User{
 		Username:     username,
-		Affiliations: []string{"sysad"},
-		Tags: map[string]domain.Tag{
-			"go": {
-				Label:    "programmingLanguage",
-				Affinity: domain.TagAffinityPositive,
-				Strength: 0.8,
-			},
-		},
-		Bio: "mock user",
+		HasIcon:      false,
+		Major:        optional.None[string](),
+		Affiliations: []domain.UserAffiliation{domain.UserAffiliationSysAd},
+		Hometown:     optional.None[string](),
+		Tags:         []string{"go"},
+		Technologies: []string{},
+		Bio:          optional.Some("mock user"),
 	}
 }

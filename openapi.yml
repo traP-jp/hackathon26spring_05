@@ -280,13 +280,21 @@ components:
       additionalProperties: false
     ProfileUpdateRequest:
       type: object
+      required:
+        - hasIcon
+        - major
+        - affiliations
+        - hometown
+        - tags
+        - technologies
+        - bio
+        - favoriteTopic
+        - dislikedTopic
       properties:
-        iconFileId:
-          type:
-            - string
-            - 'null'
-          format: uuid
-          description: アイコン画像ID。nullの場合はtraQから参照する
+        hasIcon:
+            type: boolean
+            description: Qpidにアップロードされたアイコン画像があるかどうか
+            example: true
         major:
           type:
             - string
@@ -296,7 +304,7 @@ components:
           type: array
           description: 所属班
           items:
-            type: string
+            $ref: '#/components/schemas/UserAffiliation'
           uniqueItems: true
         hometown:
           type:
@@ -304,18 +312,34 @@ components:
             - 'null'
           description: 出身
         tags:
-          type: object
-          description: タグ名をキーにしたタグ情報
-          additionalProperties:
-            $ref: '#/components/schemas/Tag'
+          type: array
+          items:
+            type: string
+          description: タグ
           example:
-            c++:
-              label: programmingLanguage
-              affinity: positive
-              strength: 0.89
+            - くねくね
+            - ドパガキ
+        technologies:
+          type: array
+          items:
+            type: string
+          description: 技術スタック
+          example:
+            - c++
+            - go
         bio:
-          type: string
+          type:
+            - string
+            - 'null'
           description: 自己紹介
+        favoriteTopic:
+          oneOf:
+            - $ref: '#/components/schemas/TopicAndValue'
+            - type: 'null'
+        dislikedTopic:
+          oneOf:
+            - $ref: '#/components/schemas/TopicAndValue'
+            - type: 'null'
       additionalProperties: false
     UserActionRequest:
       type: object
@@ -341,24 +365,24 @@ components:
       type: object
       required:
         - username
-        - iconFileId
+        - hasIcon
         - major
         - affiliations
         - hometown
         - tags
+        - technologies
         - bio
+        - favoriteTopic
+        - dislikedTopic
       properties:
         username:
           type: string
           description: ユーザーID
           example: tidus
-        iconFileId:
-          type:
-            - string
-            - 'null'
-          format: uuid
-          description: アイコン画像ID。nullの場合はtraQから参照する
-          example: b551c446-b00f-44e2-bb7d-99e0ea33e876
+        hasIcon:
+          type: boolean
+          description: Qpidにアップロードされたアイコン画像があるかどうか
+          example: true
         major:
           type:
             - string
@@ -369,7 +393,7 @@ components:
           type: array
           description: 所属班
           items:
-            type: string
+            $ref: '#/components/schemas/UserAffiliation'
           uniqueItems: true
           example:
             - algorithm
@@ -386,43 +410,35 @@ components:
           description: 出身
           example: 鳥取県
         tags:
-          type: object
-          description: タグ名をキーにしたタグ情報
-          additionalProperties:
-            $ref: '#/components/schemas/Tag'
+          type: array
+          items:
+            type: string
+          description: タグ
           example:
-            c++:
-              label: programmingLanguage
-              affinity: positive
-              strength: 0.89
+            - くねくね
+            - ドパガキ
+        technologies:
+          type: array
+          items:
+            type: string
+          description: 技術スタック
+          example:
+            - c++
+            - go
         bio:
-          type: string
+          type:
+            - string
+            - 'null'
           description: 自己紹介
           example: ''
-      additionalProperties: false
-    Tag:
-      type: object
-      required:
-        - affinity
-        - strength
-      properties:
-        label:
-          type: string
-          description: 好きな/嫌いな〇〇の〇〇の部分
-          example: programmingLanguage
-        affinity:
-          type: string
-          description: 好き嫌い
-          enum:
-            - positive
-            - neutral
-            - negative
-        strength:
-          type: number
-          format: double
-          description: 言及された回数に対して単調増加なパラメータ
-          minimum: 0
-          maximum: 1
+        favoriteTopic:
+          oneOf:
+            - $ref: '#/components/schemas/TopicAndValue'
+            - type: 'null'
+        dislikedTopic:
+          oneOf:
+            - $ref: '#/components/schemas/TopicAndValue'
+            - type: 'null'
       additionalProperties: false
     Suggestion:
       type: object
@@ -442,6 +458,32 @@ components:
           maximum: 1
           example: 0.5
       additionalProperties: false
+    TopicAndValue:
+      type: object
+      required:
+        - topic
+        - value
+      properties:
+        topic:
+          type: string
+          description: トピック名
+          example: 言語
+        value:
+          type: string
+          description: トピックの値
+          example: C++
+      additionalProperties: false
+    UserAffiliation:
+      type: string
+      description: 所属班
+      enum:
+        - algorithm
+        - ctf
+        - game
+        - graphics
+        - kaggle
+        - sound
+        - sysad
     Error:
       type: object
       required:

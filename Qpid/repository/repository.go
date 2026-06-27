@@ -7,6 +7,4 @@ type Repository interface {
 	SuggestionRepository
 	PrecomputedProfileRepository
 	IconRepository
-	AuthSessionRepository
-	OAuthStateRepository
 }
