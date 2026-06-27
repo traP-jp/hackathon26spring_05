@@ -5,7 +5,7 @@ info:
 servers:
   - url: http://localhost:8080/api
 security:
-  - cookieAuth: []
+  - forwardedUserAuth: []
 tags:
   - name: auth
     description: Authentication and account lifecycle
@@ -190,11 +190,11 @@ paths:
           $ref: '#/components/responses/Unauthorized'
 components:
   securitySchemes:
-    cookieAuth:
+    forwardedUserAuth:
       type: apiKey
-      in: cookie
-      name: session
-      description: 認証用セッションCookie
+      in: header
+      name: X-Forwarded-User
+      description: 認証済みユーザー名を表すリバースプロキシ由来のヘッダー
   schemas:
     SignupRequest:
       type: object
