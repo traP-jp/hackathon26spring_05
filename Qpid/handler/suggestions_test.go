@@ -82,7 +82,7 @@ func TestListSuggestions(t *testing.T) {
 	}
 }
 
-func TestListSuggestionsReturnsValidationErrorForInvalidSuggestion(t *testing.T) {
+func TestListSuggestions_InvalidData(t *testing.T) {
 	t.Parallel()
 
 	repo := &mockSuggestionRepository{
