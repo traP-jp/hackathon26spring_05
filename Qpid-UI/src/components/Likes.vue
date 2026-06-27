@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
-import axios from 'axios'
 
 // タブの切り替え状態を管理 ('liked' = Likeした人, 'likedBy' = Likeされた人)
 const activeTab = ref<'liked' | 'likedBy'>('liked')
@@ -8,7 +7,7 @@ const activeTab = ref<'liked' | 'likedBy'>('liked')
 // バックエンドの UserSummary 型の定義
 interface UserSummary {
   username: string
-  displayName?: string // バック側が追加してくれた時用のオプショナル
+  displayName?: string
   bio?: string
 }
 
@@ -16,19 +15,23 @@ interface UserSummary {
 const likedUsers = ref<UserSummary[]>([])
 const likedByUsers = ref<UserSummary[]>([])
 
-// 画面が開いた瞬間にバックエンドから本物のデータを2つとも取ってくる
+// 画面が開いた瞬間に、ブラウザ標準の機能（fetch）でバックエンドからデータを取ってくる
 onMounted(async () => {
   try {
     // 1. LIKEした人をバックエンドから取得
-    const resLikes = await axios.get('http://localhost:8080/api/me/likes', { withCredentials: true })
-    likedUsers.value = resLikes.data
+    const resLikes = await fetch('http://localhost:8080/api/me/likes')
+    if (resLikes.ok) {
+      likedUsers.value = await resLikes.json()
+    }
 
     // 2. 自分をLIKEした人をバックエンドから取得
-    const resLikedBy = await axios.get('http://localhost:8080/api/me/liked-by', { withCredentials: true })
-    likedByUsers.value = resLikedBy.data
+    const resLikedBy = await fetch('http://localhost:8080/api/me/liked-by')
+    if (resLikedBy.ok) {
+      likedByUsers.value = await resLikedBy.json()
+    }
 
   } catch (error) {
-    console.error('APIの取得に失敗しました。ログインしていない可能性があります:', error)
+    console.error('APIの取得に失敗しました。サーバーが起動していないか、ログインしていない可能性があります:', error)
   }
 })
 
