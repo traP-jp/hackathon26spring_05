@@ -16,7 +16,7 @@ func (h *handler) updateMe(c echo.Context) error {
 	return unauthorized(c)
 }
 
-type userSummary struct {
+type userSummaryResponse struct {
 	Username string `json:"username"`
 }
 
@@ -36,9 +36,9 @@ func (h *handler) listMyLikes(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, errorResponse{Message: "failed to list liked users"})
 	}
 
-	result := make([]userSummary, len(users))
+	result := make([]userSummaryResponse, len(users))
 	for i, user := range users {
-		result[i] = userSummary{Username: user.Username}
+		result[i] = userSummaryResponse{Username: user.Username}
 	}
 
 	return c.JSON(http.StatusOK, result)
