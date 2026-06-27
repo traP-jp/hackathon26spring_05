@@ -21,10 +21,10 @@ func toSuggestionResponses(suggestions []domain.Suggestion) ([]suggestionRespons
 	result := make([]suggestionResponse, len(suggestions))
 	for i, suggestion := range suggestions {
 		if suggestion.Username == "" {
-			return nil, errors.New("invalid suggestion")
+			return nil, errors.New("invalid suggestion: username cannot be empty")
 		}
 		if math.IsNaN(suggestion.Similarity) || suggestion.Similarity < 0 || suggestion.Similarity > 1 {
-			return nil, errors.New("invalid suggestion")
+			return nil, errors.New("invalid suggestion: similarity must be between 0 and 1")
 		}
 
 		result[i] = suggestionResponse{
