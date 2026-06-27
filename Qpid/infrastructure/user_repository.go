@@ -54,14 +54,14 @@ func (r *repositoryImpl) FindUserByUsername(username string) (*domain.User, erro
 
 	var tags []string
 	queryTags := `SELECT name FROM tags WHERE username = ?`
-	if err := r.db.Select(&tags,queryTags,username);err!=nil{
-		return nil,err
+	if err := r.db.Select(&tags, queryTags, username); err != nil {
+		return nil, err
 	}
 
 	var tools []string
-	queryTools :=`SELECT name FROM tools WHERE username = ?`
-	if err := r.db.Select(&tools,queryTools,username);err!=nil{
-		return nil,err
+	queryTools := `SELECT name FROM tools WHERE username = ?`
+	if err := r.db.Select(&tools, queryTools, username); err != nil {
+		return nil, err
 	}
 
 	user := &domain.User{
@@ -71,8 +71,8 @@ func (r *repositoryImpl) FindUserByUsername(username string) (*domain.User, erro
 		Bio:           convertNullString(row.Bio),
 		FavoriteTopic: convertTopic(row.LikeTopic, row.LikeValue),
 		DislikedTopic: convertTopic(row.DislikeTopic, row.DislikeValue),
-		Tags: tags,
-		Technologies: tools,
+		Tags:          tags,
+		Technologies:  tools,
 		Affiliations:  []domain.UserAffiliation{},
 	}
 	return user, nil
@@ -113,7 +113,7 @@ func (r *repositoryImpl) UpdateUser(username string, user domain.User) error {
 	// 更新クエリの実行
 	tx, err := r.db.Beginx()
 	if err != nil {
-			return err
+		return err
 	}
 	defer tx.Rollback()
 
@@ -129,10 +129,10 @@ func (r *repositoryImpl) UpdateUser(username string, user domain.User) error {
 	}
 
 	// 関連テーブルの更新
-	if err := r.updateUserTags(tx,username, user.Tags); err != nil {
+	if err := r.updateUserTags(tx, username, user.Tags); err != nil {
 		return err
 	}
-	if err := r.updateUserTechnologies(tx,username, user.Technologies); err != nil {
+	if err := r.updateUserTechnologies(tx, username, user.Technologies); err != nil {
 		return err
 	}
 
@@ -143,13 +143,13 @@ func (r *repositoryImpl) UpdateUser(username string, user domain.User) error {
 func (r *repositoryImpl) IsUserExists(username string) (bool, error) {
 	var row User
 	query := `SELECT 1 FROM users WHERE username = ?`
-	if err := r.db.Get(&row,query,username); err!=nil{
-		if errors.Is(err,sql.ErrNoRows){
+	if err := r.db.Get(&row, query, username); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
 			return false, nil
 		}
-		return false,err
+		return false, err
 	}
-	return true,nil
+	return true, nil
 
 }
 
@@ -169,9 +169,9 @@ func (r *repositoryImpl) updateUserTags(tx *sqlx.Tx, username string, tags []str
 		valueStrings = append(valueStrings, "(?, ?)")
 		valueArgs = append(valueArgs, username, tag)
 	}
-	
+
 	query := `INSERT INTO tags (username, name) VALUES ` + strings.Join(valueStrings, ",")
-	
+
 	// 3. 一括実行
 	_, err := tx.Exec(query, valueArgs...)
 	return err
@@ -194,7 +194,7 @@ func (r *repositoryImpl) updateUserTechnologies(tx *sqlx.Tx, username string, te
 	}
 
 	query := `INSERT INTO technologies (username, name) VALUES ` + strings.Join(valueStrings, ",")
-	
+
 	_, err := tx.Exec(query, valueArgs...)
 	return err
 }
@@ -220,11 +220,11 @@ func convertTopic(topic, value sql.NullString) optional.Option[domain.TopicAndVa
 func toNullString(opt optional.Option[string]) sql.NullString {
 	if opt.IsSome() {
 		return sql.NullString{
-			String: opt.Unwrap(), 
+			String: opt.Unwrap(),
 			Valid:  true,
 		}
 	}
-	
+
 	return sql.NullString{
 		Valid: false,
 	}
