@@ -35,7 +35,7 @@ func AuthenticationMiddleware(env *env.Env, repo repository.Repository) echo.Mid
 			}
 			// ローカル環境では常にログイン済みユーザーとして扱う
 			setLoginUserRetriever(c, &loginUserRetrieverImpl{username: "test-user"})
-			return nil
+			return next(c)
 		}
 	}
 }

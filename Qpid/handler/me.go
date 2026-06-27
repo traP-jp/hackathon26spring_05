@@ -48,7 +48,7 @@ func (h *handler) getMe(c echo.Context) error {
 	return c.JSON(http.StatusOK, toMeResponse(*user))
 }
 
-func toMeResponse(user domain.User) meResponse { //FindByUsernameで取得したデータをuserをjsonにして返す用
+func toMeResponse(user domain.User) *meResponse { //FindByUsernameで取得したデータをuserをjsonにして返す用
 	tags := make(map[string]tag, len(user.Tags))
 	for name, userTag := range user.Tags {
 		tags[name] = tag{
@@ -58,7 +58,7 @@ func toMeResponse(user domain.User) meResponse { //FindByUsernameで取得した
 		}
 	}
 
-	return meResponse{
+	return &meResponse{
 		Username:     user.Username,
 		IconFileID:   user.IconFileID,
 		Major:        user.Major,

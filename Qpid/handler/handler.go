@@ -6,6 +6,7 @@ import (
 
 	"github.com/gorilla/sessions"
 	"github.com/labstack/echo/v4"
+	echoMiddleware "github.com/labstack/echo/v4/middleware"
 	"github.com/traP-jp/hackathon26spring_05/Qpid/env"
 	"github.com/traP-jp/hackathon26spring_05/Qpid/handler/middleware"
 	"github.com/traP-jp/hackathon26spring_05/Qpid/infrastructure"
@@ -42,7 +43,9 @@ func Serve() {
 }
 
 func (h *handler) mapRoutes(e *echo.Echo) {
-	api := e.Group("/api")
+	api := e.Group("/api",
+		echoMiddleware.RequestLogger(),
+		echoMiddleware.Recover())
 	{
 		api.POST("/signup", h.signup)
 
