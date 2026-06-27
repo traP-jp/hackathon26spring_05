@@ -76,9 +76,10 @@ const handleAction = (action: 'Like' | 'Nope') => {
   
   // 次のユーザーへ（データがなくなったらnull）
   currentUserIndex.value++
-  if (currentUserIndex.value < dummyUsers.length) {
-    currentUser.value = dummyUsers[currentUserIndex.value]|| null
-  } else {
+  if (currentUserIndex.value < users.value.length) {
+    const nextUser = dummyUsers[currentUserIndex.value];
+    currentUser.value = nextUser !== undefined ? nextUser : null;
+  }else {
     currentUser.value = null
   }
   swipeOffset.value = 0
@@ -147,6 +148,8 @@ const getReccomend = async() =>{
 
 onMounted(() => {
   window.addEventListener('keydown', handleKeyDown)
+  users.value=dummyUsers
+  currentUser.value=dummyUsers[0]
 })
 onUnmounted(() => {
   window.removeEventListener('keydown', handleKeyDown)
