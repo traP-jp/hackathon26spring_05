@@ -34,7 +34,7 @@ func (r *repositoryImpl) ListLikedUsers(username string) ([]domain.UserSummary, 
 func (r *repositoryImpl) ListUsersWhoLiked(username string) ([]domain.UserSummary, error) {
 	var users []domain.UserSummary
 	err := r.db.Select(&users,
-		"SELECT from_username FROM actions WHERE to_username = ? AND status = ?",
+		"SELECT from_username AS username FROM actions WHERE to_username = ? AND status = ?",
 		username, actionStatusLike,
 	)
 	return users, err
