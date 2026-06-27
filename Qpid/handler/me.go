@@ -69,9 +69,56 @@ func toMeResponse(user domain.User) *meResponse { //FindByUsernameで取得し�
 	}
 }
 
+type meRequest struct {
+	IconFileID   string         `json:"iconFileId"`
+	Major        string         `json:"major"`
+	Affiliations []string       `json:"affiliations"`
+	Hometown     string         `json:"hometown"`
+	Tags         map[string]tag `json:"tags"`
+	Bio          string         `json:"bio"`
+}
+
 // PUT /api/me
 func (h *handler) updateMe(c echo.Context) error {
-	return unauthorized(c)
+	loginUserRetriever := middleware.GetLoginUserRetriever(c)
+
+	if !loginUserRetriever.IsUserLoggedIn() {
+		return unauthorized(c)
+	}
+
+	username, err := loginUserRetriever.GetLoginUser()
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, errorResponse{Message: "failed to get login user"})
+	}
+
+	data := &meRequest{}
+	if err := c.Bind(data); err != nil {
+		return c.JSON(http.StatusBadRequest, errorResponse{Message: "invalid request body"})
+	}
+
+	tags := make(map[string]domain.Tag, len(data.Tags))
+	for name, t := range data.Tags {
+		tags[name] = domain.Tag{
+			Label:    t.Label,
+			Affinity: domain.TagAffinity(t.Affinity),
+			Strength: t.Strength,
+		}
+	}
+	userData := domain.User{
+		Username:     username,
+		IconFileID:   data.IconFileID,
+		Major:        data.Major,
+		Affiliations: data.Affiliations,
+		Hometown:     data.Hometown,
+		Tags:         tags,
+		Bio:          data.Bio,
+	}
+
+	if err := h.repository.UpdateProfile(username, userData); err != nil {
+		return c.JSON(http.StatusInternalServerError, errorResponse{Message: "failed to update user"})
+	}
+
+	return c.JSON(http.StatusOK, toMeResponse(userData))
 }
 
 type userSummaryResponse struct {
