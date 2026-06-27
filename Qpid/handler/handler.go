@@ -6,6 +6,8 @@ import (
 
 	"github.com/gorilla/sessions"
 	"github.com/labstack/echo/v4"
+	"github.com/traP-jp/hackathon26spring_05/Qpid/domain"
+	"github.com/traP-jp/hackathon26spring_05/Qpid/handler/middleware"
 	"github.com/traP-jp/hackathon26spring_05/Qpid/repository"
 	"github.com/traP-jp/hackathon26spring_05/Qpid/repository/mock"
 )
@@ -13,6 +15,8 @@ import (
 type handler struct {
 	repository repository.Repository
 	sessions   sessions.Store
+	// middlewares
+	loginUserRetriever domain.LoginUserRetriever
 }
 
 func Serve() {
@@ -31,6 +35,7 @@ func Serve() {
 		sessions: sessions.NewCookieStore([]byte(
 			cmp.Or(os.Getenv("SESSION_SECRET"), "secret"),
 		)),
+		loginUserRetriever: middleware.GetLoginUserRetriever(),
 	}
 
 	h.mapRoutes(e)
