@@ -122,6 +122,9 @@ func (h *handler) likeUser(c echo.Context) error {
 	if toUser.Username == "" {
 		return c.JSON(http.StatusBadRequest, errorResponse{Message: "username is required"})
 	}
+	if toUser.Username == username {
+		return c.JSON(http.StatusBadRequest, errorResponse{Message: "cannot like yourself"})
+	}
 
 	isExist, err := h.repository.Exists(toUser.Username)
 	if err != nil {
