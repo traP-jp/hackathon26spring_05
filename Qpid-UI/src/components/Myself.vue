@@ -283,7 +283,6 @@ onMounted(()=>{
 
           <div class="info-row bio-row">
             <span class="label">普段の様子：</span>
-            <!-- <input v-model="editForm.status" type="text" class="edit-input" /> -->
             <textarea v-model="editForm.status" rows="5" class="edit-textarea"></textarea>
           </div>
 
@@ -313,7 +312,7 @@ onMounted(()=>{
   box-sizing: border-box;
 }
 
-/* 外枠のカード (デザインの再現) */
+/* 外枠のカード */
 .profile-card-frame {
   width: 100%;
   max-width: 1000px;
@@ -500,5 +499,50 @@ onMounted(()=>{
 }
 .btn-action:hover {
   background: #339af0;
+}
+
+/* スマホ用レスポンシブ対応（画面横幅が768px以下の時に適用）*/
+@media (max-width: 768px) {
+  .profile-card-frame {
+    flex-direction: column; /* 左右並びから縦並びに変更 */
+    padding: 20px;          /* 内側の余白をスマホ用に狭める */
+    border-radius: 24px;    /* 角丸を少しマイルドに調整 */
+  }
+
+  .column-left {
+    padding-right: 0;       /* 右側の余白をリセット */
+    margin-bottom: 24px;    /* カラム間の隙間を設定 */
+  }
+
+  .column-right {
+    padding-left: 0;        /* 左側の余白をリセット */
+  }
+
+  .vertical-border {
+    display: none;          /* 真ん中の縦の境界線を非表示に */
+  }
+
+  .name-section {
+    justify-content: center; /* 名前を中央寄せに */
+    flex-wrap: wrap;
+  }
+
+  .info-row {
+    flex-direction: column;  /* 各入力項目のラベルと中身を縦並びに */
+    align-items: flex-start;
+    gap: 6px;
+  }
+
+  .like-inputs {
+    max-width: 100%;        /* スマホ時は横幅いっぱいに広げる */
+  }
+
+  .info-row.like-group {
+    width: 100%;
+  }
+
+  .tags-container {
+    margin-left: 0 !important; /* 左のズレを解消 */
+  }
 }
 </style>
