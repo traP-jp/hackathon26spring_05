@@ -2,6 +2,11 @@ package infrastructure
 
 import "github.com/traP-jp/hackathon26spring_05/Qpid/domain"
 
+const (
+	actionStatusNope = 0
+	actionStatusLike = 1
+)
+
 // ユーザーを LIKE する。
 func (r *repositoryImpl) LikeUser(fromUsername, toUsername string) error {
 	return nil
@@ -9,7 +14,11 @@ func (r *repositoryImpl) LikeUser(fromUsername, toUsername string) error {
 
 // ユーザーを NOPE する。
 func (r *repositoryImpl) NopeUser(fromUsername, toUsername string) error {
-	return nil
+	_, err := r.db.Exec(
+		`INSERT INTO actions (id, from_username, to_username, status) VALUES (UUID(), ?, ?, ?)`,
+		fromUsername, toUsername, actionStatusNope,
+	)
+	return err
 }
 
 // LIKE したユーザーを取得する。
