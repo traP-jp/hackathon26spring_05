@@ -1,6 +1,10 @@
 package infrastructure
 
-import "github.com/jmoiron/sqlx"
+import (
+	"github.com/jmoiron/sqlx"
+)
+
+// var _ repository.Repository = (*repositoryImpl)(nil)
 
 type repositoryImpl struct {
 	db *sqlx.DB
