@@ -6,7 +6,7 @@ import 'vue3-toastify/dist/index.css';
 // 1. ダミーのユーザーデータ（バックエンドと接続するまでの繋ぎ）
 interface UserProfile {
   username: string       // DBの PRIMARY KEY
-  name: string           // name
+  name: string           // 班の人が残してほしいと言っていたサークルの人の名前
   major: string          // 学部/系
   hometown: string       // 出身
   like_topic: string     // 好きな〇〇（カテゴリ名）
@@ -22,7 +22,7 @@ interface UserProfile {
 const dummyUsers: UserProfile[] = [
   {
     username: 'n3',
-    name: 'εИ',          // name 
+    name: 'εИ',          // name が復活しました！
     major: '情報理工学院 情報工学系 B2',
     hometown: '高知県',
     like_topic: '食べ物',
@@ -124,6 +124,7 @@ const touchEnd = () => {
       v-if="currentUser" 
       class="mobile-card-container"
       :class="{ 'is-dragging': isDragging }"
+      /* 2. rotate を削除し、真横の平行移動（translateX）のみに変更 */
       :style="{ 
         transform: `translateX(${swipeOffset}px)`, 
         transition: isDragging ? 'none' : 'transform 0.3s ease' 
@@ -204,7 +205,7 @@ const touchEnd = () => {
   box-sizing: border-box;
   user-select: none;
   overflow: hidden;
-  /* 画面全体のどこをドラッグしてもカーソルが「掴む」マークになるように変更 */
+  /* 画面全体のどこを掴んでもドラッグできるようにカーソルを「掴む」マークに */
   cursor: grab;
 }
 
@@ -224,7 +225,7 @@ const touchEnd = () => {
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  /* カード自体のクリックイベントがスクロールの邪魔をしないよう設定 */
+  /* カード単体の pointer-events を有効にし、中の個別スクロールを邪魔しないように調整 */
   pointer-events: auto;
 }
 
