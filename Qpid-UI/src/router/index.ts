@@ -1,12 +1,12 @@
 import { createRouter, createWebHistory } from 'vue-router'
 
-import Matching from '../components/Matching.vue'
 import Myself from '../components/Myself.vue'
 import Likes from '../components/Likes.vue'
+import Matching_Base from '@/components/Matching_Base.vue'
 
 
 const routes = [
-  { path: '/', component: Matching },
+  { path: '/', component: Matching_Base },
   { path: '/me', component: Myself },
   { path: '/likes', component: Likes}
 
