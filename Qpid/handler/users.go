@@ -34,16 +34,16 @@ func (h *handler) getUser(c echo.Context) error {
 	userID := c.Param("id")
 
 	// ③ データベース等からユーザーを取得
-	mockUser, err := h.repository.FindByUsername(userID)
+	user, err := h.repository.FindByUsername(userID)
 	if err != nil {
-		return c.String(404, "対象が見つからない")
+		return c.String(500, "internal server error")
 	}
-	if mockUser == nil {
-		return c.String(404, "対象が見つからない")
+	if user == nil {
+		return c.String(404, "user not found")
 	}
 
 	// ④ ドメインモデルを UserResponse に詰め替えてステータス200で返却
-	return c.JSON(200, toUserResponse(*mockUser))
+	return c.JSON(200, toUserResponse(*user))
 }
 
 // domain.User から UserResponse へ変換するヘルパー関数
