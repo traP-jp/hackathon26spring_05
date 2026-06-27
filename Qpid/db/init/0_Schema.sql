@@ -1,13 +1,12 @@
 CREATE TABLE users (
   username VARCHAR(255) NOT NULL,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  major VARCHAR(255) NOT NULL,
+  major VARCHAR(255),
   hometown VARCHAR(255),
   like_topic VARCHAR(255),
   like_value VARCHAR(255),
   dislike_topic VARCHAR(255),
   dislike_value VARCHAR(255),
-  tool VARCHAR(255),
   usual_situation VARCHAR(255),
   bio TEXT,
   PRIMARY KEY (username)
@@ -18,6 +17,14 @@ CREATE INDEX idx_like_value ON users (like_value);
 CREATE INDEX idx_dislike_topic ON users (dislike_topic);
 CREATE INDEX idx_dislike_value ON users (dislike_value);
 CREATE INDEX idx_tool ON users (tool);
+
+CREATE TABLE tools (
+  username VARCHAR(36) NOT NULL,
+  name VARCHAR(255) NOT NULL,
+  PRIMARY KEY (username, name)
+)
+
+CREATE INDEX idx_tool_name ON tools (name);
 
 CREATE TABLE tags (
   username VARCHAR(36) NOT NULL,
