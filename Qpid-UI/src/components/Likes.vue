@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 
-//注意：色とかはまだ何も決めていません。全部仮です
+//注意：色とかはまだ何も決めていません。全部仮です。
 
 // タブの切り替え状態を管理 ('liked' = Likeした人, 'likedBy' = Likeされた人)
 const activeTab = ref<'liked' | 'likedBy'>('liked')
