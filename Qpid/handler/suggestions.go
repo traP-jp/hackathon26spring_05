@@ -24,7 +24,7 @@ func toSuggestionResponses(suggestions []domain.Suggestion) ([]suggestionRespons
 			return nil, errors.New("invalid suggestion: username cannot be empty")
 		}
 		if math.IsNaN(suggestion.Similarity) || suggestion.Similarity < 0 || suggestion.Similarity > 1 {
-			return nil, errors.New("invalid suggestion: similarity must be between 0 and 1")
+			return nil, errors.New("invalid suggestion: similarity must be a valid number between 0 and 1")
 		}
 
 		result[i] = suggestionResponse{
