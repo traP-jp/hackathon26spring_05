@@ -45,3 +45,8 @@ CREATE TABLE icons(
   mime_type VARCHAR(50) NOT NULL,
   PRIMARY KEY (username)
 );
+
+CREATE TABLE precompiled_users (
+  username VARCHAR(255) PRIMARY KEY NOT NULL,
+  data_json JSON NOT NULL
+)

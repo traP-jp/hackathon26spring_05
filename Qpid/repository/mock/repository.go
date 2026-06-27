@@ -72,8 +72,15 @@ func (r *MockRepository) UpsertSimilarity(usernameA, usernameB string, similarit
 }
 
 // 事前計算済みプロフィールを取得する。
-func (r *MockRepository) FindPrecomputedProfileByUsername(username string) (*domain.User, error) {
-	return mockUser(username), nil
+func (r *MockRepository) FindPrecomputedProfileByUsername(username string) (*domain.UserOverride, error) {
+	u := mockUser(username)
+	return &domain.UserOverride{
+		Major:        u.Major,
+		Affiliations: u.Affiliations,
+		Hometown:     u.Hometown,
+		Tags:         u.Tags,
+		Bio:          u.Bio,
+	}, nil
 }
 
 // 事前計算済みユーザー名を一覧する。
