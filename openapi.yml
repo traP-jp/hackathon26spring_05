@@ -304,7 +304,7 @@ components:
           type: array
           description: 所属班
           items:
-            type: string
+            $ref: '#/components/schemas/UserAffiliation'
           uniqueItems: true
         hometown:
           type:
@@ -328,12 +328,18 @@ components:
             - c++
             - go
         bio:
-          type: string
+          type:
+            - string
+            - 'null'
           description: 自己紹介
         favoriteTopic:
-          $ref: '#/components/schemas/TopicAndValue'
+          oneOf:
+            - $ref: '#/components/schemas/TopicAndValue'
+            - type: 'null'
         dislikedTopic:
-          $ref: '#/components/schemas/TopicAndValue'
+          oneOf:
+            - $ref: '#/components/schemas/TopicAndValue'
+            - type: 'null'
       additionalProperties: false
     UserActionRequest:
       type: object
@@ -387,7 +393,7 @@ components:
           type: array
           description: 所属班
           items:
-            type: string
+            $ref: '#/components/schemas/UserAffiliation'
           uniqueItems: true
           example:
             - algorithm
@@ -420,13 +426,19 @@ components:
             - c++
             - go
         bio:
-          type: string
+          type:
+            - string
+            - 'null'
           description: 自己紹介
           example: ''
         favoriteTopic:
-          $ref: '#/components/schemas/TopicAndValue'
+          oneOf:
+            - $ref: '#/components/schemas/TopicAndValue'
+            - type: 'null'
         dislikedTopic:
-          $ref: '#/components/schemas/TopicAndValue'
+          oneOf:
+            - $ref: '#/components/schemas/TopicAndValue'
+            - type: 'null'
       additionalProperties: false
     Suggestion:
       type: object
@@ -461,6 +473,17 @@ components:
           description: トピックの値
           example: C++
       additionalProperties: false
+    UserAffiliation:
+      type: string
+      description: 所属班
+      enum:
+        - algorithm
+        - ctf
+        - game
+        - graphics
+        - kaggle
+        - sound
+        - sysad
     Error:
       type: object
       required:

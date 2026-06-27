@@ -107,6 +107,7 @@ func mockUser(username string) *domain.User {
 		Affiliations: []domain.UserAffiliation{domain.UserAffiliationSysAd},
 		Hometown:     optional.None[string](),
 		Tags:         []string{"go"},
+		Technologies: []string{},
 		Bio:          optional.Some("mock user"),
 	}
 }
