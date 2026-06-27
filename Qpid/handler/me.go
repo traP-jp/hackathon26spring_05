@@ -104,9 +104,46 @@ func (h *handler) listMyLikes(c echo.Context) error {
 	return c.JSON(http.StatusOK, result)
 }
 
+type userActionRequest struct {
+	Username string `json:"username"`
+}
+
 // POST /api/me/likes
 func (h *handler) likeUser(c echo.Context) error {
-	return unauthorized(c)
+	if !h.loginUserRetriever.IsUserLoggedIn() {
+		return unauthorized(c)
+	}
+
+	username, err := h.loginUserRetriever.GetLoginUser()
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, errorResponse{Message: "failed to get login user"})
+	}
+
+	toUser := &userActionRequest{}
+	if err := c.Bind(toUser); err != nil {
+		return c.JSON(http.StatusBadRequest, errorResponse{Message: "invalid request body"})
+	}
+
+	if toUser.Username == "" {
+		return c.JSON(http.StatusBadRequest, errorResponse{Message: "username is required"})
+	}
+	if toUser.Username == username {
+		return c.JSON(http.StatusBadRequest, errorResponse{Message: "cannot like yourself"})
+	}
+
+	isExist, err := h.repository.Exists(toUser.Username)
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, errorResponse{Message: "failed to check user existence"})
+	}
+	if !isExist {
+		return c.JSON(http.StatusBadRequest, errorResponse{Message: "user does not exist"})
+	}
+
+	if err = h.repository.Like(username, toUser.Username); err != nil {
+		return c.JSON(http.StatusInternalServerError, errorResponse{Message: "failed to like user"})
+	}
+
+	return c.NoContent(http.StatusNoContent)
 }
 
 // GET /api/me/liked-by
