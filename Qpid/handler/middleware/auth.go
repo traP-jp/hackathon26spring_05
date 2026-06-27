@@ -57,5 +57,10 @@ func setLoginUserRetriever(ctx echo.Context, retriever domain.LoginUserRetriever
 }
 
 func GetLoginUserRetriever(ctx echo.Context) domain.LoginUserRetriever {
-	return ctx.Get("loginUserRetriever").(domain.LoginUserRetriever)
+	v := ctx.Get("loginUserRetriever")
+	if retriever, ok := v.(domain.LoginUserRetriever); ok && retriever != nil {
+		return retriever
+	}
+	// Middleware 未適用などの場合は未ログイン扱いにする
+	return &loginUserRetrieverImpl{}
 }
