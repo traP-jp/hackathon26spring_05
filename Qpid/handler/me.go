@@ -71,9 +71,32 @@ func (h *handler) updateMe(c echo.Context) error {
 	return unauthorized(c)
 }
 
+type userSummaryResponse struct {
+	Username string `json:"username"`
+}
+
 // GET /api/me/likes
 func (h *handler) listMyLikes(c echo.Context) error {
-	return unauthorized(c)
+	if !h.loginUserRetriever.IsUserLoggedIn() {
+		return unauthorized(c)
+	}
+
+	username, err := h.loginUserRetriever.GetLoginUser()
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, errorResponse{Message: "failed to get login user"})
+	}
+
+	users, err := h.repository.ListLikedUsers(username)
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, errorResponse{Message: "failed to list liked users"})
+	}
+
+	result := make([]userSummaryResponse, len(users))
+	for i, user := range users {
+		result[i] = userSummaryResponse{Username: user.Username}
+	}
+
+	return c.JSON(http.StatusOK, result)
 }
 
 // POST /api/me/likes
