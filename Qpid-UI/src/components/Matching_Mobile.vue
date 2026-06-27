@@ -107,6 +107,30 @@ const touchEnd = () => {
     swipeOffset.value = 0 // しきい値を超えなければ中央に戻す
   }
 }
+
+const getReccomend = async() =>{
+  try{
+    //const response = await fetch(`https://qpid.trap.show/api/me`,{
+    const response = await fetch(`/api/suggestions`,{
+      method: "GET",
+      headers:{
+        "content-type":"application/json"
+      },
+    });
+
+    if(!response.ok){
+      console.log("Error : Not OK")
+    }
+    // const errorText = await response.text();
+    // console.log("バックエンドから返ってきた生の文字:", errorText);
+    const userData = await response.json();
+    console.log("APIから取得したデータ:", userData)
+    
+  }catch(error){
+    console.log("Error : ",error)
+    toast.error("通信エラーが発生しました")
+}
+}
 </script>
 
 <template>
