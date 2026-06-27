@@ -220,12 +220,12 @@ func (h *handler) nopeUser(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, errorResponse{Message: "user does not exist"})
 	}
 
-	isActionExist, err := h.repository.IsActionExists(toUser.Username, *username)
+	isActionExist, err := h.repository.IsActionExists(*username, toUser.Username)
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, errorResponse{Message: "failed to check action existence"})
 	}
 	if isActionExist {
-		return c.JSON(http.StatusBadRequest, errorResponse{Message: "action already exists"})
+		return c.JSON(http.StatusConflict, errorResponse{Message: "action already exists"})
 	}
 
 	if err = h.repository.NopeUser(*username, toUser.Username); err != nil {
