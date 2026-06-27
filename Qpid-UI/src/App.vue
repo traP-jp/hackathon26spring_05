@@ -1,13 +1,11 @@
 <script setup lang="ts">
-import Matching from './components/Matching.vue'
 import Header from './components/Header.vue';
-import Myself from './components/template/Myself.vue';
 </script>
 
 <template>
   <div class="app-layout">
     <Header/>
-    <main>
+    <main class="main-content">
       <router-view />
     </main>
   </div>

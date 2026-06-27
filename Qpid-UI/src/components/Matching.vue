@@ -1,4 +1,3 @@
 <template>
-  <hi>あああ</hi>
-  
+  <h1>あああ</h1>
 </template>
