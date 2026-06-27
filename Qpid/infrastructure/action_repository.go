@@ -9,7 +9,11 @@ const (
 
 // ユーザーを LIKE する。
 func (r *repositoryImpl) LikeUser(fromUsername, toUsername string) error {
-	return nil
+	_, err := r.db.Exec(
+		`INSERT INTO actions (id, from_username, to_username, status) VALUES (UUID(), ?, ?, ?)`,
+		fromUsername, toUsername, actionStatusLike,
+	)
+	return err
 }
 
 // ユーザーを NOPE する。
