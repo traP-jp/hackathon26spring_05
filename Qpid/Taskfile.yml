@@ -23,3 +23,9 @@ tasks:
   down:
     cmds:
       - docker compose --env-file {{.ENV_LOCAL_FILE}} down
+
+  format:
+    aliases:
+      - fmt
+    cmds:
+      - go fmt ./...

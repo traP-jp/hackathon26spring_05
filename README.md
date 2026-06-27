@@ -59,6 +59,14 @@ sudo snap install task --classic
   task down
   ```
 
+- フォーマット
+
+  PR 出す前に行ってください.
+
+  ```sh
+  task fmt
+  ```
+
 ### Environment
 
 バックエンドの環境変数は `.env.local` に設定してください. `task init` で自動生成されます.

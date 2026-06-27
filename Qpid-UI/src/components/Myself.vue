@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { onMounted, ref } from 'vue'
 import { toast } from 'vue3-toastify'
 
 // ユーザーデータの型定義
@@ -12,14 +12,34 @@ interface UserProfile {
   like_thing: string
   dislike_category: string
   dislike_thing: string
+  affiliations:string[]
   tool: string
   hobbies: string[]
   status: string
   bio: string
 }
 
-// 初期データ（ここにバックエンドから取得した値をそのまま入れても動きます）
+interface UserResponse{
+  username:string
+}
+
+// 初期データ
 const editForm = ref<UserProfile>({
+  id:'',
+  name: '',
+  faculty: '',
+  origin: '',
+  like_category: '',
+  like_thing: '',
+  dislike_category: '',
+  dislike_thing: '',
+  affiliations: [],
+  tool: '',
+  hobbies: [],
+  status: '',
+  bio: ''
+})
+const editFormDemo = ref<UserProfile>({
   id:'n3',
   name: 'εИ',
   faculty: '情報理工学院 情報工学系 B2',
@@ -28,6 +48,7 @@ const editForm = ref<UserProfile>({
   like_thing: 'ラーメン',
   dislike_category: '言語',
   dislike_thing: 'TEX',
+  affiliations:['algo','game','sound'],
   tool: 'Python',
   hobbies: ['勉強', 'くねくね', '料理'],
   status: 'オートマトンおじさん',
@@ -59,6 +80,41 @@ const addHobbyTag = () => {
 const removeHobbyTag = (index: number) => {
   editForm.value.hobbies.splice(index, 1)
 }
+
+const getMe = async() => {
+  try{
+    //const response = await fetch(`https://qpid.trap.show/api/me`,{
+    const response = await fetch(`/api/me`,{
+      method: "GET",
+      headers:{
+        "content-type":"application/json"
+      },
+    });
+
+    if(!response.ok){
+      console.log("Error : Not OK")
+    }
+    // const errorText = await response.text();
+    // console.log("バックエンドから返ってきた生の文字:", errorText);
+    const userData = await response.json();
+    console.log("APIから取得したデータ:", userData)
+    editForm.value.id=userData.username;
+    editForm.value.faculty=userData.major;
+    editForm.value.origin=userData.hometown;
+    editForm.value.bio=userData.bio;
+    editForm.value.affiliations=userData.affiliations;
+    console.log(editForm.value);
+
+    
+  }catch(error){
+    console.log("Error : ",error)
+    toast.error("通信エラーが発生しました")
+  }
+}
+
+onMounted(()=>{
+  getMe();
+})
 </script>
 
 <template>
@@ -113,6 +169,16 @@ const removeHobbyTag = (index: number) => {
 
       <div class="column-right">
         <div class="info-list">
+
+          <div class="info-row">
+            <span class="label">所属：</span>
+            <div class="tags-container" style="display: flex; flex-wrap: wrap; gap: 8px; margin-left: 10px;">
+              <div v-for="(affili, idx) in editForm.affiliations||[]" :key="idx" class="tag-item" style="background: #e7f5ff; border-color: #a5d8ff;">
+                #{{ affili }}
+              </div>
+              <span v-if="!editForm.affiliations ||editForm.affiliations.length === 0" style="color: #aaa; font-size: 0.9rem;">未所属</span>
+            </div>
+          </div>
           
           <div class="info-row">
             <span class="label">好きな創作ツール：</span>
