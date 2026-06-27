@@ -36,7 +36,8 @@ CREATE TABLE actions (
   CONSTRAINT uq_action UNIQUE (from_username, to_username)
 );
 
-CREATE INDEX idx_userstatus ON actions (from_userstatus,to_userstatus);
+CREATE INDEX idx_from_username_and_status ON actions (from_username, status);
+CREATE INDEX idx_to_username_and_status ON acctions (to_username, status);
 
 CREATE TABLE icons(
   username VARCHAR(36) NOT NULL,
