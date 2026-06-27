@@ -110,11 +110,13 @@ type userActionRequest struct {
 
 // POST /api/me/likes
 func (h *handler) likeUser(c echo.Context) error {
-	if !h.loginUserRetriever.IsUserLoggedIn() {
+	loginUserRetriever := middleware.GetLoginUserRetriever(c)
+
+	if !loginUserRetriever.IsUserLoggedIn() {
 		return unauthorized(c)
 	}
 
-	username, err := h.loginUserRetriever.GetLoginUser()
+	username, err := loginUserRetriever.GetLoginUser()
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, errorResponse{Message: "failed to get login user"})
 	}
