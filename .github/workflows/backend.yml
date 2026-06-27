@@ -8,7 +8,7 @@ on:
 
 jobs:
   backend:
-    name: Code Quality and Test (Backend)
+    name: Code Quality and Test
     runs-on: ubuntu-latest
 
     defaults:
