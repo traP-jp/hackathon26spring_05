@@ -120,7 +120,6 @@ const handleKeyDown = (e: KeyboardEvent) => {
   }
 }
 
-// ライフサイクルでイベントリスナーの登録・解除（ReactのuseEffectクリーンアップと同じ）
 onMounted(() => {
   window.addEventListener('keydown', handleKeyDown)
 })
