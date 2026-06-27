@@ -13,7 +13,7 @@ interface UserProfile {
   dislike_category: string
   dislike_thing: string
   affiliations:string[]
-  tool: string
+  tool: string[]
   hobbies: string[]
   status: string
   bio: string
@@ -34,7 +34,7 @@ const editForm = ref<UserProfile>({
   dislike_category: '',
   dislike_thing: '',
   affiliations: [],
-  tool: '',
+  tool: [],
   hobbies: [],
   status: '',
   bio: ''
@@ -49,7 +49,7 @@ const editFormDemo = ref<UserProfile>({
   dislike_category: '言語',
   dislike_thing: 'TEX',
   affiliations:['algo','game','sound'],
-  tool: 'Python',
+  tool: ['Python','Go'],
   hobbies: ['勉強', 'くねくね', '料理'],
   status: 'オートマトンおじさん',
   bio: 'Pythonはいいぞ！\n最近サウンドを始めました'
@@ -57,11 +57,12 @@ const editFormDemo = ref<UserProfile>({
 
 // 新しい趣味タグの入力用
 const newHobbyInput = ref('')
+const newTechInput = ref('')
 
 // 変更を保存する（APIを叩く場合はここで行います）
 const saveProfile = () => {
   console.log('保存されるデータ:', editForm.value)
-  toast.success('プロフィールを保存しました！ ✨')
+  updateMe()
 }
 
 // 趣味タグの追加
@@ -76,6 +77,16 @@ const addHobbyTag = () => {
   newHobbyInput.value = ''
 }
 
+const addTechTool = () => {
+  const tech = newTechInput.value.trim()
+  if (!tech) return
+  if (editForm.value.tool.includes(tech)) {
+    toast.warning('既に存在するタグです')
+    return
+  }
+  editForm.value.tool.push(tech)
+  newTechInput.value = ''
+}
 // 趣味タグの削除
 const removeHobbyTag = (index: number) => {
   editForm.value.hobbies.splice(index, 1)
@@ -93,6 +104,47 @@ const getMe = async() => {
 
     if(!response.ok){
       console.log("Error : Not OK")
+      editForm.value = { ...editFormDemo.value };
+    }
+    // const errorText = await response.text();
+    // console.log("バックエンドから返ってきた生の文字:", errorText);
+    const userData = await response.json();
+    console.log("APIから取得したデータ:", userData)
+    editForm.value.id=userData.username;
+    editForm.value.faculty=userData.major;
+    editForm.value.origin=userData.hometown;
+    editForm.value.bio=userData.bio;
+    editForm.value.affiliations=userData.affiliations;
+    console.log(editForm.value);
+
+    
+  }catch(error){
+    console.log("Error : ",error)
+    toast.error("通信エラーが発生しました")
+  }
+}
+
+const updateMe = async() =>{
+    try{
+    //const response = await fetch(`https://qpid.trap.show/api/me`,{
+    const response = await fetch(`/api/me`,{
+      method: "PUT",
+      headers:{
+        "content-type":"application/json"
+      },
+      // body:{
+      //   iconFieldID:null,
+      //   major:editForm.value.faculty,
+      //   affiliations:editForm.value.affiliations,
+      //   hometown:editForm.value.origin,
+      //   tags:editForm.value.hobbies,
+      //   bio:editForm.value.bio,
+      // }
+    });
+
+    if(!response.ok){
+      console.log("Error : Not OK")
+      editForm.value = { ...editFormDemo.value };
     }
     // const errorText = await response.text();
     // console.log("バックエンドから返ってきた生の文字:", errorText);
@@ -138,6 +190,16 @@ onMounted(()=>{
 
         <div class="info-list">
           <div class="info-row">
+            <span class="label">所属：</span>
+            <div class="tags-container" style="display: flex; flex-wrap: wrap; gap: 8px; margin-left: 10px;">
+              <div v-for="(affili, idx) in editForm.affiliations||[]" :key="idx" class="tag-item" style="background: #e7f5ff; border-color: #a5d8ff;">
+                #{{ affili }}
+              </div>
+              <span v-if="!editForm.affiliations ||editForm.affiliations.length === 0" style="color: #aaa; font-size: 0.9rem;">未所属</span>
+            </div>
+          </div>
+
+          <div class="info-row">
             <span class="label">学部/系：</span>
             <input v-model="editForm.faculty" type="text center-text" class="edit-input center-text" />
           </div>
@@ -162,6 +224,7 @@ onMounted(()=>{
               <input v-model="editForm.dislike_thing" type="text" class="edit-input center-text" placeholder="例)スターリンソート" />
             </div>
           </div>
+
         </div>
       </div>
 
@@ -170,23 +233,29 @@ onMounted(()=>{
       <div class="column-right">
         <div class="info-list">
 
-          <div class="info-row">
-            <span class="label">所属：</span>
-            <div class="tags-container" style="display: flex; flex-wrap: wrap; gap: 8px; margin-left: 10px;">
-              <div v-for="(affili, idx) in editForm.affiliations||[]" :key="idx" class="tag-item" style="background: #e7f5ff; border-color: #a5d8ff;">
-                #{{ affili }}
-              </div>
-              <span v-if="!editForm.affiliations ||editForm.affiliations.length === 0" style="color: #aaa; font-size: 0.9rem;">未所属</span>
-            </div>
-          </div>
+
           
-          <div class="info-row">
+          <div class="info-row hobby-group">
             <span class="label">好きな創作ツール：</span>
-            <input 
-              v-model="editForm.tool"
-              type="text" class="edit-input center-text"
-              placeholder="Python,アイビスペイント..." 
-            />
+            <div class="hobby-content">
+              <div class="hobby-input-wrap">
+                <input 
+                  v-model="newTechInput" 
+                  type="text" 
+                  placeholder="Python,アイビスペイント..." 
+                  class="edit-input" 
+                  @keydown.enter.prevent="addTechTool"
+                />
+                <button class="btn-add" @click="addTechTool">＋</button>
+              </div>
+
+              <div class="tags-container">
+                <div v-for="(tag, idx) in editForm.tool" :key="idx" class="tag-item editable">
+                  <span class="btn-remove-tag" @click="removeHobbyTag(idx)">×</span>
+                  #{{ tag }}
+                </div>
+              </div>
+            </div>
           </div>
 
           <div class="info-row hobby-group">
@@ -196,7 +265,7 @@ onMounted(()=>{
                 <input 
                   v-model="newHobbyInput" 
                   type="text" 
-                  placeholder="タグを入力してEnter/ボタン" 
+                  placeholder="競プロ,ゲーム,スポーツ..." 
                   class="edit-input" 
                   @keydown.enter.prevent="addHobbyTag"
                 />
