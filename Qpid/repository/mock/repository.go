@@ -91,7 +91,7 @@ func (r *MockRepository) SaveIcon(username string, icon domain.Icon) error {
 func (r *MockRepository) FindIconByUsername(username string) (*domain.Icon, error) {
 	return &domain.Icon{
 		Blob:     []byte("mock-icon"),
-		MimeType: "image/png",
+		MimeType: domain.IconMimeTypePNG,
 	}, nil
 }
 
