@@ -53,7 +53,13 @@ func (r *repositoryImpl) FindUserByUsername(username string) (*domain.User, erro
 
 	var tags []string
 	queryTags := `SELECT name FROM tags WHERE username = ?`
-	if err := r.db.Get(&tags,queryTags,username);err!=nil{
+	if err := r.db.Select(&tags,queryTags,username);err!=nil{
+		return nil,err
+	}
+
+	var tools []string
+	queryTools :=`SELECT name FROM tools WHERE username = ?`
+	if err := r.db.Select(&tools,queryTools,username);err!=nil{
 		return nil,err
 	}
 
@@ -64,6 +70,9 @@ func (r *repositoryImpl) FindUserByUsername(username string) (*domain.User, erro
 		Bio:      convertNullString(row.Bio),
 		FavoriteTopic: convertTopic(row.LikeTopic, row.LikeValue),
 		DislikedTopic: convertTopic(row.DislikeTopic, row.DislikeValue),
+		Tags: tags,
+		Technologies: tools,
+		Affiliations:  []domain.UserAffiliation{},
 	}
 	return user,nil
 }
