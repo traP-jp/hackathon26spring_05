@@ -1,14 +1,13 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
-import axios from 'axios'
 
 // タブの切り替え状態を管理 ('liked' = Likeした人, 'likedBy' = Likeされた人)
 const activeTab = ref<'liked' | 'likedBy'>('liked')
 
 // バックエンドの UserSummary 型の定義
 interface UserSummary {
-  username: string
-  displayName?: string // バック側が追加してくれた時用のオプショナル
+  username: string    // DBの PRIMARY KEY
+  name: string        // サークルの人の名前（消さずに残しました！）
   bio?: string
 }
 
@@ -16,19 +15,23 @@ interface UserSummary {
 const likedUsers = ref<UserSummary[]>([])
 const likedByUsers = ref<UserSummary[]>([])
 
-// 画面が開いた瞬間にバックエンドから本物のデータを2つとも取ってくる
+// 画面が開いた瞬間に、ブラウザ標準の機能（fetch）でバックエンドからデータを取ってくる
 onMounted(async () => {
   try {
     // 1. LIKEした人をバックエンドから取得
-    const resLikes = await axios.get('http://localhost:8080/api/me/likes', { withCredentials: true })
-    likedUsers.value = resLikes.data
+    const resLikes = await fetch('http://localhost:8080/api/me/likes')
+    if (resLikes.ok) {
+      likedUsers.value = await resLikes.json()
+    }
 
     // 2. 自分をLIKEした人をバックエンドから取得
-    const resLikedBy = await axios.get('http://localhost:8080/api/me/liked-by', { withCredentials: true })
-    likedByUsers.value = resLikedBy.data
+    const resLikedBy = await fetch('http://localhost:8080/api/me/liked-by')
+    if (resLikedBy.ok) {
+      likedByUsers.value = await resLikedBy.json()
+    }
 
   } catch (error) {
-    console.error('APIの取得に失敗しました。ログインしていない可能性があります:', error)
+    console.error('APIの取得に失敗しました。サーバーが起動していないか、ログインしていない可能性があります:', error)
   }
 })
 
@@ -64,7 +67,7 @@ const displayUsers = computed(() => {
     <div v-else class="cards-grid">
       <div v-for="user in displayUsers" :key="user.username" class="card">
         <div class="icon-placeholder"></div>
-        <p class="user-name">{{ user.displayName || user.username }}</p>
+        <p class="user-name">{{ user.name || user.username }}</p>
         <p class="user-bio">{{ user.bio || '自己紹介文はまだありません。' }}</p>
       </div>
     </div>
@@ -159,5 +162,70 @@ const displayUsers = computed(() => {
   line-clamp: 4;
   -webkit-box-orient: vertical;
   overflow: hidden;
+}
+
+/*画面の大きさによる表示の仕方の調整*/
+@media (max-width: 768px) {
+  .likes-page {
+    padding: 20px 4%; /* 左右の余白を少し狭くして画面を広く使う */
+  }
+
+  .no-users {
+    font-size: 1.2rem;
+    margin-top: 30px;
+  }
+
+  /* タブを横幅いっぱいに広げてスマホでタップしやすくする */
+  .tab-container {
+    width: 100%;
+    margin-bottom: 25px;
+  }
+
+  .tab-button {
+    flex: 1; /* ボタンを均等に50%ずつの幅にする */
+    padding: 12px 10px;
+    font-size: 16px; /* 文字サイズをスマホ用に調整 */
+    text-align: center;
+  }
+
+  /* スマホの縦長画面に合わせて、4列から「2列」に変更 */
+  .cards-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 15px; /* カード同士の間隔を少し詰める */
+  }
+
+  /* スマホだと縦長になりすぎるのを防ぐため、比率を 2/3 から 3/4 に微調整 */
+  .card {
+    border-radius: 12px;
+    padding: 12px;
+    aspect-ratio: 3 / 4;
+  }
+
+  .icon-placeholder {
+    width: 45%;
+    margin-bottom: 10px;
+  }
+
+  .user-name {
+    font-size: 1.2rem; /* スマホで見やすい文字サイズに */
+    margin-bottom: 8px;
+  }
+
+  .user-bio {
+    font-size: 0.9rem; /* 自己紹介文を小さくして、はみ出しを防ぐ */
+    line-height: 1.4;
+    -webkit-line-clamp: 3; /* 行数を4行から3行に制限してスッキリさせる */
+    line-clamp: 3;
+  }
+}
+
+/* 画面がめちゃくちゃ小さいスマホ（iPhone SEなど）用の微調整 */
+@media (max-width: 400px) {
+  .cards-grid {
+    grid-template-columns: 1fr; /* 1列にして1枚ずつドカンと見せる */
+  }
+  .card {
+    aspect-ratio: auto; /* 1列のときは高さを自動にして文字が漏れないように */
+  }
 }
 </style>
