@@ -163,4 +163,69 @@ const displayUsers = computed(() => {
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
+
+/*画面の大きさによる表示の仕方の調整*/
+@media (max-width: 768px) {
+  .likes-page {
+    padding: 20px 4%; /* 左右の余白を少し狭くして画面を広く使う */
+  }
+
+  .no-users {
+    font-size: 1.2rem;
+    margin-top: 30px;
+  }
+
+  /* タブを横幅いっぱいに広げてスマホでタップしやすくする */
+  .tab-container {
+    width: 100%;
+    margin-bottom: 25px;
+  }
+
+  .tab-button {
+    flex: 1; /* ボタンを均等に50%ずつの幅にする */
+    padding: 12px 10px;
+    font-size: 16px; /* 文字サイズをスマホ用に調整 */
+    text-align: center;
+  }
+
+  /* スマホの縦長画面に合わせて、4列から「2列」に変更 */
+  .cards-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 15px; /* カード同士の間隔を少し詰める */
+  }
+
+  /* スマホだと縦長になりすぎるのを防ぐため、比率を 2/3 から 3/4 に微調整 */
+  .card {
+    border-radius: 12px;
+    padding: 12px;
+    aspect-ratio: 3 / 4;
+  }
+
+  .icon-placeholder {
+    width: 45%;
+    margin-bottom: 10px;
+  }
+
+  .user-name {
+    font-size: 1.2rem; /* スマホで見やすい文字サイズに */
+    margin-bottom: 8px;
+  }
+
+  .user-bio {
+    font-size: 0.9rem; /* 自己紹介文を小さくして、はみ出しを防ぐ */
+    line-height: 1.4;
+    -webkit-line-clamp: 3; /* 行数を4行から3行に制限してスッキリさせる */
+    line-clamp: 3;
+  }
+}
+
+/* 画面がめちゃくちゃ小さいスマホ（iPhone SEなど）用の微調整 */
+@media (max-width: 400px) {
+  .cards-grid {
+    grid-template-columns: 1fr; /* 1列にして1枚ずつドカンと見せる */
+  }
+  .card {
+    aspect-ratio: auto; /* 1列のときは高さを自動にして文字が漏れないように */
+  }
+}
 </style>
