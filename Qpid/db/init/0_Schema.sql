@@ -31,8 +31,7 @@ CREATE TABLE actions (
   id VARCHAR(36) NOT NULL,
   from_username VARCHAR(36) NOT NULL,
   to_username VARCHAR(36) NOT NULL,
-  from_userstatus TINYINT NOT NULL,
-  to_userstatus TINYINT NOT NULL,
+  status TINYINT NOT NULL,
   PRIMARY KEY (id),
   CONSTRAINT uq_action UNIQUE (from_username, to_username)
 );
