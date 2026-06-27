@@ -6,6 +6,7 @@ import (
 
 	"github.com/labstack/echo/v4"
 	"github.com/traP-jp/hackathon26spring_05/Qpid/domain"
+	"github.com/traP-jp/hackathon26spring_05/Qpid/handler/middleware"
 )
 
 type tag struct {
@@ -26,11 +27,13 @@ type meResponse struct {
 
 // GET /api/me
 func (h *handler) getMe(c echo.Context) error {
-	if !h.loginUserRetriever.IsUserLoggedIn() {
+	loginUserRetriever := middleware.GetLoginUserRetriever(c)
+
+	if !loginUserRetriever.IsUserLoggedIn() {
 		return unauthorized(c)
 	}
 
-	username, err := h.loginUserRetriever.GetLoginUser()
+	username, err := loginUserRetriever.GetLoginUser()
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, errorResponse{Message: "failed to get login user"})
 	}
@@ -46,7 +49,7 @@ func (h *handler) getMe(c echo.Context) error {
 	return c.JSON(http.StatusOK, toMeResponse(*user))
 }
 
-func toMeResponse(user domain.User) meResponse { //FindByUsernameで取得したデータをuserをjsonにして返す用
+func toMeResponse(user domain.User) *meResponse { //FindByUsernameで取得したデータをuserをjsonにして返す用
 	tags := make(map[string]tag, len(user.Tags))
 	for name, userTag := range user.Tags {
 		tags[name] = tag{
@@ -56,7 +59,7 @@ func toMeResponse(user domain.User) meResponse { //FindByUsernameで取得した
 		}
 	}
 
-	return meResponse{
+	return &meResponse{
 		Username:     user.Username,
 		IconFileID:   user.IconFileID,
 		Major:        user.Major,
@@ -90,11 +93,13 @@ func toUserSummaryResponses(users []domain.UserSummary) ([]userSummaryResponse, 
 
 // GET /api/me/likes
 func (h *handler) listMyLikes(c echo.Context) error {
-	if !h.loginUserRetriever.IsUserLoggedIn() {
+	loginUserRetriever := middleware.GetLoginUserRetriever(c)
+
+	if !loginUserRetriever.IsUserLoggedIn() {
 		return unauthorized(c)
 	}
 
-	username, err := h.loginUserRetriever.GetLoginUser()
+	username, err := loginUserRetriever.GetLoginUser()
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, errorResponse{Message: "failed to get login user"})
 	}
@@ -112,9 +117,48 @@ func (h *handler) listMyLikes(c echo.Context) error {
 	return c.JSON(http.StatusOK, result)
 }
 
+type userActionRequest struct {
+	Username string `json:"username"`
+}
+
 // POST /api/me/likes
 func (h *handler) likeUser(c echo.Context) error {
-	return unauthorized(c)
+	loginUserRetriever := middleware.GetLoginUserRetriever(c)
+
+	if !loginUserRetriever.IsUserLoggedIn() {
+		return unauthorized(c)
+	}
+
+	username, err := loginUserRetriever.GetLoginUser()
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, errorResponse{Message: "failed to get login user"})
+	}
+
+	toUser := &userActionRequest{}
+	if err := c.Bind(toUser); err != nil {
+		return c.JSON(http.StatusBadRequest, errorResponse{Message: "invalid request body"})
+	}
+
+	if toUser.Username == "" {
+		return c.JSON(http.StatusBadRequest, errorResponse{Message: "username is required"})
+	}
+	if toUser.Username == username {
+		return c.JSON(http.StatusBadRequest, errorResponse{Message: "cannot like yourself"})
+	}
+
+	isExist, err := h.repository.Exists(toUser.Username)
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, errorResponse{Message: "failed to check user existence"})
+	}
+	if !isExist {
+		return c.JSON(http.StatusBadRequest, errorResponse{Message: "user does not exist"})
+	}
+
+	if err = h.repository.Like(username, toUser.Username); err != nil {
+		return c.JSON(http.StatusInternalServerError, errorResponse{Message: "failed to like user"})
+	}
+
+	return c.NoContent(http.StatusNoContent)
 }
 
 // GET /api/me/liked-by
