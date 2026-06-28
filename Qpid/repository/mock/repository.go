@@ -109,7 +109,8 @@ func (r *MockRepository) DeleteIcon(username string) error {
 func mockUser(username string) *domain.User {
 	return &domain.User{
 		Username:     username,
-		HasIcon:      true, // trueにしてアイコンの存在を想定する方がテストとして健全です
+		DisplayName:  "モックユーザー",
+		HasIcon:      false,
 		Major:        optional.Some("工学院 情報工学系"), // 値を入れたケース
 		Affiliations: []domain.UserAffiliation{domain.UserAffiliationAlgorithm, domain.UserAffiliationGame},
 		Hometown:     optional.Some("東京都"), // 値を入れたケース

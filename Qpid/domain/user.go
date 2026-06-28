@@ -6,6 +6,8 @@ import "github.com/moznion/go-optional"
 type User struct {
 	// ユーザー ID
 	Username string
+	// 表示名
+	DisplayName string
 	// Qpidにアップロードされたアイコンがあるかどうか
 	HasIcon bool
 	// 学部または系
