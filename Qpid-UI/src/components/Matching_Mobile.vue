@@ -6,7 +6,7 @@ import 'vue3-toastify/dist/index.css';
 // 1. ダミーのユーザーデータ（バックエンドと接続するまでの繋ぎ）
 interface UserProfile {
   username: string       // DBの PRIMARY KEY
-  name: string           // name
+  name: string           // 班の人が残してほしいと言っていたサークルの人の名前
   major: string          // 学部/系
   hometown: string       // 出身
   like_topic: string     // 好きな〇〇（カテゴリ名）
@@ -91,11 +91,13 @@ const handleAction = (action: 'Like' | 'Nope') => {
   if (currentUserIndex.value < dummyUsers.length) {
     currentUser.value = dummyUsers[currentUserIndex.value]|| null
   } else {
-    currentUser.value = null
+    currentUser.value = null // 次のユーザーへ（データがなくなったらnull）
   }
   swipeOffset.value = 0
 }
 
+// 3. マウス・スマホのドラッグ/スワイプイベントハンドラ
+// 1. 各イベントの型を明示的に指定（Vue 3 / TypeScript環境）
 const touchStart = (e: any) => {
   isDragging = true
   startX = e.touches ? e.touches[0].clientX : e.clientX
@@ -107,6 +109,7 @@ const touchMove = (e: any) => {
   swipeOffset.value = currentX - startX
 }
 
+// ユーザーのご指定（右スワイプ/右矢印 = Like、左スワイプ/左矢印 = Nope）で判定します
 const touchEnd = () => {
   if (!isDragging) return
   isDragging = false
@@ -287,7 +290,7 @@ const getReccomend = async() =>{
   opacity: 0; 
   background-repeat: no-repeat;
   background-position: center;
-  background-size: 80% auto; /* ハートを表示する後ろのレイヤー全体のサイズ調整 */
+  background-size: 80% auto; /* ハートを表示するのは後ろのレイヤー全体 */
 }
 
 /* NOPE（左側：青いハート） */
