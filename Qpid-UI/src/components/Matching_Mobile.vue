@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { toast } from 'vue3-toastify';
 import 'vue3-toastify/dist/index.css';
 
@@ -72,6 +72,9 @@ const handleAction = (action: 'Like' | 'Nope') => {
 // 3. マウス・スマホのドラッグ/スワイプイベントハンドラ
 // 1. 各イベントの型を明示的に指定（Vue 3 / TypeScript環境）
 const touchStart = (e: any) => {
+  // 表示するユーザーがもういない場合は、スワイプ操作を受け付けない
+  if (!currentUser.value) return
+
   isDragging = true
   startX = e.touches ? e.touches[0].clientX : e.clientX
 }
@@ -97,6 +100,76 @@ const touchEnd = () => {
   }
 }
 
+// 4. PCのキーボード（矢印キー）イベントハンドラ
+const handleKeyDown = (e: KeyboardEvent) => {
+  if (!currentUser.value) return // ユーザーがいない場合は何もしない
+  if (e.key === 'ArrowRight') {
+    handleAction('Like')
+  } else if (e.key === 'ArrowLeft') {
+    handleAction('Nope')
+  }
+}
+
+const getReccomend = async() =>{
+  try{
+    //const response = await fetch(`https://qpid.trap.show/api/me`,{
+    const response = await fetch(`/api/suggestions`,{
+      method: "GET",
+      headers:{
+        "content-type":"application/json"
+      },
+    });
+
+    if(!response.ok){
+      console.log("Error : Not OK")
+      const errorText = await response.text();
+      console.log("バックエンドから返ってきた生の文字:", errorText);
+    }
+    // const errorText = await response.text();
+    // console.log("バックエンドから返ってきた生の文字:", errorText);
+    const suggestions = await response.json();    
+    console.log("[getReccomend]APIから取得したデータ:", suggestions)
+    await getReccomendUser(suggestions.map((s: any) => s.username));
+    
+  }catch(error){
+    console.log("Error : ",error)
+    toast.error("通信エラーが発生しました")
+  }
+}
+
+const getReccomendUser = async (userIDs: Array<string>) => {
+  try {
+    const userPromises = userIDs.map(async (id) => {
+      const res = await fetch(`/api/users/${id}`);
+      if (!res.ok) return null;
+      return res.json();
+    });
+
+    const results = await Promise.all(userPromises);
+    
+    // 取得できたユーザーのみを格納 (nullを除外)
+    users.value = results.filter((u) => u !== null);
+    
+    // 最初のユーザーをセット
+    if (users.value.length > 0) {
+      currentUser.value = users.value[0]??null;
+      currentUserIndex.value = 0;
+    }
+    console.log("[getReccomend]ユーザー取得成功")
+  } catch (error) {
+    console.error("ユーザー詳細取得エラー:", error);
+  }
+};
+
+onMounted(() => {
+  window.addEventListener('keydown', handleKeyDown)
+  console.log("Matching Start...")
+  getReccomend()
+})
+
+onUnmounted(() => {
+  window.removeEventListener('keydown', handleKeyDown)
+})
 </script>
 
 <template>
