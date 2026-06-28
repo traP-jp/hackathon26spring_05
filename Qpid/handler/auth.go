@@ -65,6 +65,20 @@ func (h *handler) signup(c *echo.Context) error {
 		)
 		return echo.NewHTTPError(http.StatusInternalServerError, "Failed to create user")
 	}
+
+	uuid, err := h.getUserUUID(*username)
+	if err != nil {
+		c.Logger().Warn("failed to get traQ UUID, affiliations will be empty",
+			slog.String("username", *username),
+			slog.Any("error", err),
+		)
+	}
+	if uuid != "" {
+		newUser.Affiliations = h.fetchAffiliations(c, uuid)
+	} else {
+		newUser.Affiliations = []domain.UserAffiliation{}
+	}
+
 	return c.JSON(http.StatusCreated, toUserResponse(newUser))
 }
 

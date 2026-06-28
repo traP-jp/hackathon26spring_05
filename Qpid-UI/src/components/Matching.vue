@@ -5,53 +5,57 @@ import 'vue3-toastify/dist/index.css';
 
 // 1. ダミーのユーザーデータ（バックエンドと接続するまでの繋ぎ）
 interface UserProfile {
-  id: string
-  name: string
-  department: string
-  faculty: string
-  origin: string
-  like_category: string
-  like_thing: string
-  dislike_category: string
-  dislike_thing: string
-  tool: string
-  hobby: string
+  username: string
+  displayname: string
+  affiliations:string[]
+  major: string
+  hometown: string
+  favoriteTopic:{
+    topic:string,
+    value:string
+  }
+  dislikedTopic:{
+    topic:string,
+    value:string
+  }
+  technologies: string[] 
+  tags: string[]         
   status: string
   bio: string
 }
 
-const dummyUsers: UserProfile[] = [
-  {
-    id: 'n3',
-    name: 'εИ',
-    department: 'algo, game, sysad',
-    faculty: '情報理工学院 情報工学系 B2',
-    origin: '高知県',
-    like_category: '食べ物',
-    like_thing: 'ラーメン',
-    dislike_category: '言語',
-    dislike_thing: 'TEX',
-    tool: 'Python',
-    hobby: '勉学、くねくね、料理',
-    status: 'オートマトンおじさん',
-    bio: 'Pythonはいいぞ！\n最近サウンドを始めました'
-  },
-  {
-    id: "Suima",
-    name: '睡魔',
-    department: 'all',
-    faculty: '生命理工学院 B2',
-    origin: '東京都',
-    like_category: '飲み物',
-    like_thing: 'Monster',
-    dislike_category: '言葉',
-    dislike_thing: 'およー',
-    tool: 'Tex',
-    hobby: 'Tex,',
-    status: 'TeXおじさん',
-    bio: 'TeXをやりましょう'
-  }
-]
+// const dummyUsers: UserProfile[] = [
+//   {
+//     id: 'n3',
+//     name: 'εИ',
+//     department: 'algo, game, sysad',
+//     faculty: '情報理工学院 情報工学系 B2',
+//     origin: '高知県',
+//     like_category: '食べ物',
+//     like_thing: 'ラーメン',
+//     dislike_category: '言語',
+//     dislike_thing: 'TEX',
+//     tool: 'Python',
+//     hobby: '勉学、くねくね、料理',
+//     status: 'オートマトンおじさん',
+//     bio: 'Pythonはいいぞ！\n最近サウンドを始めました\naaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\naaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\naaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\naaaaaaaaaaaaaaaaaaaaaaaaaaa\naaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\naaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\naaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\naaaaaaaaaaaaaaaaaaaaaaaaaaa'
+//   },
+//   {
+//     id: "Suima",
+//     name: '睡魔',
+//     department: 'all',
+//     faculty: '生命理工学院 B2',
+//     origin: '東京都',
+//     like_category: '飲み物',
+//     like_thing: 'Monster',
+//     dislike_category: '言葉',
+//     dislike_thing: 'およー',
+//     tool: 'Tex',
+//     hobby: 'Tex,',
+//     status: 'TeXおじさん',
+//     bio: 'TeXをやりましょう'
+//   }
+// ]
 
 const currentUserIndex = ref(0)
 const currentUser = ref<UserProfile | null>(null)
@@ -69,15 +73,17 @@ const notify = (name: string|undefined, action: string) => {
 }
 
 // アクション処理（バックエンドにデータを送る場合はここで行う）
-const handleAction = (action: 'Like' | 'Nope') => {
+const handleAction = async(action: 'Like' | 'Nope') => {
   //toast.success(`${currentUser.value?.name} さんに 【${action}】 をしました！`)
-  notify(currentUser.value?.name,action);
+  if (!currentUser.value) return;
+  await sendAction(action, currentUser.value.username);
+  notify(currentUser.value?.displayname,action);
 
   
   // 次のユーザーへ（データがなくなったらnull）
   currentUserIndex.value++
   if (currentUserIndex.value < users.value.length) {
-    const nextUser = dummyUsers[currentUserIndex.value];
+    const nextUser = users.value[currentUserIndex.value];
     currentUser.value = nextUser !== undefined ? nextUser : null;
   }else {
     currentUser.value = null
@@ -134,22 +140,80 @@ const getReccomend = async() =>{
 
     if(!response.ok){
       console.log("Error : Not OK")
+      const errorText = await response.text();
+      console.log("バックエンドから返ってきた生の文字:", errorText);
     }
     // const errorText = await response.text();
     // console.log("バックエンドから返ってきた生の文字:", errorText);
-    const userData = await response.json();
-    console.log("APIから取得したデータ:", userData)
+    const suggestions = await response.json();    
+    console.log("[getReccomend]APIから取得したデータ:", suggestions)
+    await getReccomendUser(suggestions.map((s: any) => s.username));
     
   }catch(error){
     console.log("Error : ",error)
     toast.error("通信エラーが発生しました")
+  }
 }
-}
+
+const getReccomendUser = async (userIDs: Array<string>) => {
+  try {
+    const userPromises = userIDs.map(async (id) => {
+      const res = await fetch(`/api/users/${id}`);
+      if (!res.ok) return null;
+      return res.json();
+    });
+
+    const results = await Promise.all(userPromises);
+    
+    // 取得できたユーザーのみを格納 (nullを除外)
+    users.value = results.filter((u) => u !== null);
+    
+    console.log("[getReccomend]ユーザー取得成功")
+    // 最初のユーザーをセット
+    if (users.value.length > 0) {
+      currentUser.value = users.value[0]??null;
+      currentUserIndex.value = 0;
+      console.log("[getReccomend]user info",users.value[0])
+    }
+  } catch (error) {
+    console.error("ユーザー詳細取得エラー:", error);
+  }
+};
+
+const sendAction = async (action: 'Like' | 'Nope', username: string) => {
+  const endpoint = action === 'Like' ? '/api/me/likes' : '/api/me/nopes';
+  
+  try {
+    console.log({username})
+    const response = await fetch(endpoint, {
+      method: 'POST',
+      headers: {
+        'content-type': 'application/json'
+      },
+      body: JSON.stringify({ username: username })
+    });
+
+    if (response.status === 204) {
+      console.log(`${action} 成功: ${username}`);
+      // 成功時の処理（必要に応じてトースト通知など）
+    } else if (response.status === 409) {
+      toast.warn("既にアクション済みです");
+    } else {
+      throw new Error(`アクション失敗: ${response.status}`);
+    }
+  } catch (error) {
+    console.error("通信エラー:", error);
+    toast.error("アクションの送信に失敗しました");
+  }
+};
 
 onMounted(() => {
   window.addEventListener('keydown', handleKeyDown)
-  users.value=dummyUsers
-  currentUser.value = dummyUsers[0] ?? null}
+  console.log("Matching Start...")
+  getReccomend()
+  //users.value=dummyUsers
+  //currentUser.value = dummyUsers[0] ?? null
+  }
 )
 onUnmounted(() => {
   window.removeEventListener('keydown', handleKeyDown)
@@ -175,44 +239,46 @@ onUnmounted(() => {
       }"
     >  
       <div class="absolute-item pos-department">
-        <span class="label">所属:</span> {{ currentUser.department }}
+        <span class="label">所属:</span> {{ currentUser.affiliations.join(', ') }}
       </div>
 
       <div class="absolute-item pos-origin">
-        <span class="label">出身:</span> {{ currentUser.origin }}
+        <span class="label">出身:</span> {{ currentUser.hometown }}
       </div>
       
       <div class="absolute-item pos-faculty">
-        <span class="label">学部/系:</span> {{ currentUser.faculty }}
+        <span class="label">学部/系:</span> {{ currentUser.major }}
       </div>
       
       <div class="absolute-item pos-like">
-        <span class="label">好きな〇〇:</span> {{ currentUser.like_thing }}
+        <span class="label">好きな{{currentUser.favoriteTopic?.topic}}:</span> {{ currentUser.favoriteTopic?.value }}
       </div>
       
       <div class="absolute-item pos-dislike">
-        <span class="label">嫌いな〇〇:</span> {{ currentUser.dislike_thing }}
+        <span class="label">嫌いな{{currentUser.dislikedTopic?.topic}}:</span> {{ currentUser.dislikedTopic?.value }}
       </div>
 
       <div 
         class="card-center"
       >
         <div class="avatar-box">
-          <img :src="`https://q.trap.jp/api/v3/public/icon/${currentUser.id}`" alt="avatar" class="avatar-img" draggable="false" />
+          <img :src="`https://q.trap.jp/api/v3/public/icon/${currentUser.username}`" alt="avatar" class="avatar-img" draggable="false" />
         </div>
-        <div class="user-name">{{ currentUser.name }} (@{{currentUser.id}})</div>
+        <div class="user-name">{{ currentUser.displayname }} (@{{currentUser.username}})</div>
       </div>
 
       <div class="absolute-item pos-tool">
-        <span class="label">好きな創作ツール:</span> {{ currentUser.tool }}
+        <span class="label">好きな創作ツール:</span> {{ currentUser.technologies?.join(', ') }}
       </div>
       
       <div class="absolute-item pos-hobby">
-        <span class="label">趣味タグ:</span> {{ currentUser.hobby }}
+        <span class="label">趣味:</span> {{ currentUser.tags?.join(', ') }}
       </div>
       
       <div class="absolute-item pos-status">
-        <span class="label">普段の様子:</span> {{ currentUser.status }}
+        <span class="label">普段の様子:</span>
+        <p class="bio-text">{{ currentUser.status }}</p>
+
       </div>
       
       <div class="absolute-item pos-bio">
@@ -223,7 +289,7 @@ onUnmounted(() => {
     </div>
 
     <div v-else class="no-more-users">
-      <h2>今日の条件に合う人は全員チェックしました！🏹</h2>
+      <h2>今日の条件に合う人は全員チェックしました！</h2>
       <p>新しい友達が増えるのをお楽しみに！</p>
     </div>
   </div>
@@ -312,23 +378,32 @@ onUnmounted(() => {
 }
 
 .pos-status {
-  top: 50%;
-  left: 75%;
+  top: 45%;
+  left: 70%;
+  width: 30%;
 }
 
 .pos-bio {
   top: 70%;
-  left: 70%;
+  left: 60%;
   width: 30%;
 }
 
 .bio-text {
   white-space: pre-wrap;
+  word-break: break-all;
   background: #f1f3f5;
   padding: 12px;
   border-radius: 8px;
   font-size: 0.95rem;
   margin-top: 6px;
+  /*長すぎる自己紹介をマッチング画面で省略*/
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 5;
+  line-clamp: 5;
+  height:100px;
+  overflow: auto;
 }
 
 /* --- 中央のアバター（画面のど真ん中に固定） --- */

@@ -29,9 +29,15 @@ func UsernameExtractorMiddleware(env *env.Env) echo.MiddlewareFunc {
 	}
 }
 
-func AuthenticationMiddleware(repo repository.Repository) echo.MiddlewareFunc {
+func AuthenticationMiddleware(
+	repo repository.Repository,
+	getUserUUID func(username string) (string, error),
+) echo.MiddlewareFunc {
 	if repo == nil {
 		panic("repo is nil")
+	}
+	if getUserUUID == nil {
+		panic("getUserUUID is nil")
 	}
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c *echo.Context) error {
@@ -39,6 +45,7 @@ func AuthenticationMiddleware(repo repository.Repository) echo.MiddlewareFunc {
 			if username == nil {
 				return echo.NewHTTPError(http.StatusUnauthorized, "Unauthorized")
 			}
+
 			exists, err := repo.IsUserExists(*username)
 			if err != nil {
 				c.Logger().Error(
@@ -51,12 +58,26 @@ func AuthenticationMiddleware(repo repository.Repository) echo.MiddlewareFunc {
 			if !exists {
 				return echo.NewHTTPError(http.StatusUnauthorized, "Unauthorized")
 			}
+
+			uuid, err := getUserUUID(*username)
+			if err != nil {
+				c.Logger().Warn("failed to get traQ UUID",
+					slog.String("username", *username),
+					slog.Any("error", err),
+				)
+			} else if uuid != "" {
+				setUserUUID(c, uuid)
+			}
+
 			return next(c)
 		}
 	}
 }
 
-const usernameKey = "Username"
+const (
+	usernameKey = "Username"
+	uuidKey     = "UserUUID"
+)
 
 func setUsername(c *echo.Context, username string) {
 	c.Set(usernameKey, username)
@@ -69,4 +90,17 @@ func GetUsername(c *echo.Context) *string {
 		return nil
 	}
 	return &username
+}
+
+func setUserUUID(c *echo.Context, uuid string) {
+	c.Set(uuidKey, uuid)
+}
+
+// ログイン中のユーザーの traQ UUID を取得する. 未取得の場合は nil.
+func GetUserUUID(c *echo.Context) *string {
+	uuid, ok := c.Get(uuidKey).(string)
+	if !ok || uuid == "" {
+		return nil
+	}
+	return &uuid
 }

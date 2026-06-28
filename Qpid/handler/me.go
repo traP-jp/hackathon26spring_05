@@ -35,6 +35,11 @@ func (h *handler) getMe(c *echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, errorResponse{Message: "user not found"})
 	}
 
+	if uuid := middleware.GetUserUUID(c); uuid != nil {
+		user.Affiliations = h.fetchAffiliations(c, *uuid)
+	} else {
+		user.Affiliations = []domain.UserAffiliation{}
+	}
 	displayName, err := h.fetchUserDisplayName(*username)
 	if err != nil || displayName == nil {
 		c.Logger().Error(
@@ -52,7 +57,6 @@ func (h *handler) getMe(c *echo.Context) error {
 type updateMeRequest struct {
 	HasIcon       bool                                 `json:"hasIcon"`
 	Major         optional.Option[string]              `json:"major"`
-	Affiliations  []domain.UserAffiliation             `json:"affiliations"`
 	Hometown      optional.Option[string]              `json:"hometown"`
 	Tags          []string                             `json:"tags"`
 	Technologies  []string                             `json:"technologies"`
@@ -93,7 +97,6 @@ func (h *handler) updateMe(c *echo.Context) error {
 		Username:      *username,
 		HasIcon:       data.HasIcon,
 		Major:         data.Major,
-		Affiliations:  data.Affiliations,
 		Hometown:      data.Hometown,
 		Tags:          data.Tags,
 		Technologies:  data.Technologies,
@@ -109,6 +112,12 @@ func (h *handler) updateMe(c *echo.Context) error {
 			slog.Any("error", err),
 		)
 		return c.JSON(http.StatusInternalServerError, errorResponse{Message: "failed to update user"})
+	}
+
+	if uuid := middleware.GetUserUUID(c); uuid != nil {
+		userData.Affiliations = h.fetchAffiliations(c, *uuid)
+	} else {
+		userData.Affiliations = []domain.UserAffiliation{}
 	}
 
 	return c.JSON(http.StatusOK, toUserResponse(userData))
