@@ -3,7 +3,6 @@ package handler
 import (
 	"log/slog"
 	"net/http"
-	"time"
 
 	"github.com/labstack/echo/v5"
 	"github.com/moznion/go-optional"
@@ -109,48 +108,10 @@ func toTopicAndValueResponse(topicAndValue optional.Option[domain.TopicAndValue]
 	})
 }
 
-const cacheKeyUserIdByUsername = "userIdByUsername:"
-
-func (h *handler) updateUserIdByUsernameCache(username string) *string {
-	req := h.traq.client.UserAPI.GetUsers(h.traq.context).Name(username)
-	u, _, err := req.Execute()
-	if err != nil || len(u) == 0 {
-		slog.Error("failed to fetch user", slog.String("username", username), slog.Any("error", err))
-		return nil
-	}
-	if u == nil {
-		return nil
-	}
-	h.cache.Set(cacheKeyUserIdByUsername+username, u[0].Id, time.Hour*24)
-	return &u[0].Id
-}
-
-func (h *handler) getUserIdByUsername(username string) (*string, error) {
-	uid, ok := h.cache.Get(cacheKeyUserIdByUsername + username)
-	if !ok {
-		return h.updateUserIdByUsernameCache(username), nil
-	}
-	if uidStr, ok := uid.(string); ok {
-		return &uidStr, nil
-	}
-	return h.updateUserIdByUsernameCache(username), nil
-}
-
 func (h *handler) fetchUserDisplayName(username string) (*string, error) {
-	uid, err := h.getUserIdByUsername(username)
-	if err != nil {
+	user, err := h.findTraqUserByUsername(username)
+	if err != nil || user == nil {
 		return nil, err
 	}
-	if uid == nil {
-		return nil, nil
-	}
-	req := h.traq.client.UserAPI.GetUser(h.traq.context, *uid)
-	u, _, err := req.Execute()
-	if err != nil {
-		return nil, err
-	}
-	if u == nil {
-		return nil, nil
-	}
-	return &u.DisplayName, nil
+	return &user.DisplayName, nil
 }

@@ -10,7 +10,6 @@ import (
 	"github.com/gorilla/sessions"
 	"github.com/labstack/echo/v5"
 	echoMiddleware "github.com/labstack/echo/v5/middleware"
-	"github.com/patrickmn/go-cache"
 	"github.com/traP-jp/hackathon26spring_05/Qpid/env"
 	"github.com/traP-jp/hackathon26spring_05/Qpid/handler/middleware"
 	"github.com/traP-jp/hackathon26spring_05/Qpid/infrastructure"
@@ -24,8 +23,7 @@ type handler struct {
 	repository repository.Repository
 	sessions   sessions.Store
 	traq       traqClientWithContext
-	uuidCache  sync.Map // username → UUID
-	cache      *cache.Cache
+	traqUsers  sync.Map // username → traQ user
 }
 
 type traqClientWithContext struct {
@@ -62,9 +60,7 @@ func Serve() {
 
 	if h.env.TraqAccessToken != "" {
 		h.traq = traqClientWithContext{
-			client: traq.NewAPIClient(&traq.Configuration{
-				Host: h.env.TraqHost,
-			}),
+			client:  newTraqAPIClient(h.env.TraqHost),
 			context: context.WithValue(context.Background(), traq.ContextAccessToken, h.env.TraqAccessToken),
 		}
 	} else {
