@@ -24,38 +24,42 @@ interface UserProfile {
   bio: string
 }
 
-// const dummyUsers: UserProfile[] = [
-//   {
-//     id: 'n3',
-//     name: 'εИ',
-//     department: 'algo, game, sysad',
-//     faculty: '情報理工学院 情報工学系 B2',
-//     origin: '高知県',
-//     like_category: '食べ物',
-//     like_thing: 'ラーメン',
-//     dislike_category: '言語',
-//     dislike_thing: 'TEX',
-//     tool: 'Python',
-//     hobby: '勉学、くねくね、料理',
-//     status: 'オートマトンおじさん',
-//     bio: 'Pythonはいいぞ！\n最近サウンドを始めました\naaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\naaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\naaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\naaaaaaaaaaaaaaaaaaaaaaaaaaa\naaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\naaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\naaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\naaaaaaaaaaaaaaaaaaaaaaaaaaa'
-//   },
-//   {
-//     id: "Suima",
-//     name: '睡魔',
-//     department: 'all',
-//     faculty: '生命理工学院 B2',
-//     origin: '東京都',
-//     like_category: '飲み物',
-//     like_thing: 'Monster',
-//     dislike_category: '言葉',
-//     dislike_thing: 'およー',
-//     tool: 'Tex',
-//     hobby: 'Tex,',
-//     status: 'TeXおじさん',
-//     bio: 'TeXをやりましょう'
-//   }
-// ]
+const dummyUsers: UserProfile[] = [
+  {
+    username: 'n3',
+    displayname: 'εИ',
+    affiliations: ['algo','game', 'sysad'],
+    major: '情報理工学院 情報工学系 B2',
+    hometown: '高知県',
+    favoriteTopic:{
+      topic:'もの',
+      value:'genMira'
+    },
+    dislikedTopic:{
+      topic:'もの',
+      value:'Unity'
+    },
+    technologies: ['Python'],
+    tags: ['勉学','くねくね','料理'],
+    status: 'オートマトン大好き',
+    bio: 'Pythonはいいぞ！\n最近サウンドを始めました'
+  },
+  // {
+  //   id: "Suima",
+  //   name: '睡魔',
+  //   department: 'all',
+  //   faculty: '生命理工学院 B2',
+  //   origin: '東京都',
+  //   like_category: '飲み物',
+  //   like_thing: 'Monster',
+  //   dislike_category: '言葉',
+  //   dislike_thing: 'およー',
+  //   tool: 'Tex',
+  //   hobby: 'Tex,',
+  //   status: 'TeXおじさん',
+  //   bio: 'TeXをやりましょう'
+  // }
+]
 
 const currentUserIndex = ref(0)
 const currentUser = ref<UserProfile | null>(null)
@@ -210,9 +214,9 @@ const sendAction = async (action: 'Like' | 'Nope', username: string) => {
 onMounted(() => {
   window.addEventListener('keydown', handleKeyDown)
   console.log("Matching Start...")
-  getReccomend()
-  //users.value=dummyUsers
-  //currentUser.value = dummyUsers[0] ?? null
+  // getReccomend()
+  users.value=dummyUsers
+  currentUser.value = dummyUsers[0] ?? null
   }
 )
 onUnmounted(() => {

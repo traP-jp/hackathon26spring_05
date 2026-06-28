@@ -19,29 +19,29 @@ const router = createRouter({
   routes: routes as any
 })
 
-router.beforeEach(async (to, from, next) => {
-  if (to.path === '/login') {
-    next();
-    return;
-  }
+// router.beforeEach(async (to, from, next) => {
+//   if (to.path === '/login') {
+//     next();
+//     return;
+//   }
 
-  try {
-    //const response = await fetch('https://qpid.trap.show/api/me');
-    const response = await fetch('/api/me');
-    if (response.status === 500) {
-      next('/login');
-      const errorText = await response.text();
-      console.log("Unauthenticated:",errorText)
-    } else {
-      next();
-      const errorText = await response.text();
-      console.log("Authenticated:",errorText)
-    }
-  } catch (error) {
-    next('/login');
-    console.log("Authentication Error! :",error)
-    //next();
-  }
-});
+//   try {
+//     //const response = await fetch('https://qpid.trap.show/api/me');
+//     const response = await fetch('/api/me');
+//     if (response.status === 500) {
+//       next('/login');
+//       const errorText = await response.text();
+//       console.log("Unauthenticated:",errorText)
+//     } else {
+//       next();
+//       const errorText = await response.text();
+//       console.log("Authenticated:",errorText)
+//     }
+//   } catch (error) {
+//     next('/login');
+//     console.log("Authentication Error! :",error)
+//     //next();
+//   }
+// });
 
 export default router
