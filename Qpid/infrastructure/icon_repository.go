@@ -34,5 +34,9 @@ func (r *repositoryImpl) FindIconByUsername(username string) (*domain.Icon, erro
 
 // アイコン画像を削除する。
 func (r *repositoryImpl) DeleteIcon(username string) error {
-	return nil
+	_, err := r.db.Exec(
+		"DELETE FROM icons WHERE username = ?",
+		username,
+	)
+	return err
 }
