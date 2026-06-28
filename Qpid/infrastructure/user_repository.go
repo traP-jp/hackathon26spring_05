@@ -144,16 +144,12 @@ func (r *repositoryImpl) UpdateUser(username string, user domain.User) error {
 
 // ユーザーの存在を確認する。
 func (r *repositoryImpl) IsUserExists(username string) (bool, error) {
-	var row User
-	query := `SELECT 1 FROM users WHERE username = ?`
-	if err := r.db.Get(&row, query, username); err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return false, nil
-		}
+	var exists bool
+	query := `SELECT EXISTS (SELECT 1 FROM users WHERE username = ?)`
+	if err := r.db.Get(&exists, query, username); err != nil {
 		return false, err
 	}
-	return true, nil
-
+	return exists, nil
 }
 
 // tagsテーブルを更新する。
