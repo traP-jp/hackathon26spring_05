@@ -239,18 +239,6 @@ func (h *handler) listUsersWhoLikedMe(c *echo.Context) error {
 		return unauthorized(c)
 	}
 
-	toUser := &userActionRequest{}
-	if err := c.Bind(toUser); err != nil {
-		return c.JSON(http.StatusBadRequest, errorResponse{Message: "invalid request body"})
-	}
-
-	if toUser.Username == "" {
-		return c.JSON(http.StatusBadRequest, errorResponse{Message: "username is required"})
-	}
-	if toUser.Username == *username {
-		return c.JSON(http.StatusBadRequest, errorResponse{Message: "cannot like yourself"})
-	}
-
 	users, err := h.repository.ListUsersWhoLiked(*username)
 	if err != nil {
 		c.Logger().Error(
