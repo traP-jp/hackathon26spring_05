@@ -36,6 +36,9 @@ func AuthenticationMiddleware(
 	if repo == nil {
 		panic("repo is nil")
 	}
+	if getUserUUID == nil {
+		panic("getUserUUID is nil")
+	}
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c *echo.Context) error {
 			username := GetUsername(c)
