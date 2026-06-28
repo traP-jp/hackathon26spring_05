@@ -182,7 +182,9 @@ const getReccomend = async() =>{
 
           <div v-if="currentUser.tags && currentUser.tags.length > 0" class="info-item">
             <span class="label">趣味タグ:</span> 
-            <span class="value tag-text">{{ currentUser.tags.join('、') }}</span>
+            <div class="tag-badges-container">
+              <span v-for="tag in currentUser.tags" :key="tag" class="value font-badge tool-badge">{{ tag }}</span>
+            </div>
           </div>
 
           <div class="info-item">
@@ -195,9 +197,9 @@ const getReccomend = async() =>{
             <span class="value">{{ currentUser.dislike_value }}</span>
           </div>
 
-          <div class="info-item">
+          <div class="info-item block-item">
             <span class="label">普段の様子:</span> 
-            <span class="value italic-text">“ {{ currentUser.usual_situation }} ”</span>
+            <p class="usual-text">“ {{ currentUser.usual_situation }} ”</p>
           </div>
 
           <div class="info-item block-item">
@@ -330,6 +332,13 @@ const getReccomend = async() =>{
   word-break: break-word;
 }
 
+.tag-badges-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  justify-content: flex-end;
+}
+
 .font-badge {
   background-color: #e3f2fd;
   color: #1e88e5;
@@ -345,9 +354,20 @@ const getReccomend = async() =>{
   border: 1px solid #dee2e6;
 }
 
-.italic-text {
+.usual-text {
+  width: 100%;
+  white-space: pre-wrap;
+  word-break: break-all;
+  background: #f8f9fa;
+  border: 1px solid #e9ecef;
+  padding: 10px;
+  border-radius: 8px;
+  font-size: 0.95rem;
   font-style: italic;
+  margin-top: 6px;
   color: #555;
+  line-height: 1.4;
+  box-sizing: border-box;
 }
 
 .bio-text {
