@@ -19,39 +19,11 @@ interface UserProfile {
   tags?: string[]        // DBのtagsテーブルから取得する想定の趣味タグ
 }
 
-const dummyUsers: UserProfile[] = [
-  {
-    username: 'n3',
-    name: 'εИ',
-    major: '情報理工学院 情報工学系 B2',
-    hometown: '高知県',
-    like_topic: '食べ物',
-    like_value: 'ラーメン',
-    dislike_topic: '言語',
-    dislike_value: 'TEX',
-    tool: 'Python',
-    usual_situation: 'オートマトンおじさん',
-    bio: 'Pythonはいいぞ！\n最近サウンドを始めましたあああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああ',
-    tags: ['勉学', 'くねくね', '料理']
-  },
-  {
-    username: 'Suima',
-    name: '睡麻',
-    major: '生命理工学院 B2',
-    hometown: '東京都',
-    like_topic: '飲み物',
-    like_value: 'Monster',
-    dislike_topic: '言葉',
-    dislike_value: 'およー',
-    tool: 'Tex',
-    usual_situation: 'TeXおじさん',
-    bio: 'TeXをやりましょう',
-    tags: ['Tex']
-  }
-]
+
 
 const currentUserIndex = ref(0)
-const currentUser = ref<UserProfile | null | undefined>(dummyUsers[0])
+const currentUser = ref<UserProfile | null>(null)
+const users = ref<UserProfile[]>([])
 // 2. ジェスチャー・操作の管理用変数
 let startX = 0
 let isDragging = false
@@ -88,10 +60,11 @@ const handleAction = (action: 'Like' | 'Nope') => {
   notify(currentUser.value?.name, action);
   
   currentUserIndex.value++
-  if (currentUserIndex.value < dummyUsers.length) {
-    currentUser.value = dummyUsers[currentUserIndex.value]|| null
-  } else {
-    currentUser.value = null // 次のユーザーへ（データがなくなったらnull）
+  if (currentUserIndex.value < users.value.length) {
+    const nextUser = users.value[currentUserIndex.value];
+    currentUser.value = nextUser !== undefined ? nextUser : null;
+  }else {
+    currentUser.value = null
   }
   swipeOffset.value = 0
 }
@@ -124,26 +97,6 @@ const touchEnd = () => {
   }
 }
 
-const getReccomend = async() =>{
-  try{
-    const response = await fetch(`/api/suggestions`,{
-      method: "GET",
-      headers:{
-        "content-type":"application/json"
-      },
-    });
-
-    if(!response.ok){
-      console.log("Error : Not OK")
-    }
-    const userData = await response.json();
-    console.log("APIから取得したデータ:", userData)
-    
-  }catch(error){
-    console.log("Error : ",error)
-    toast.error("通信エラーが発生しました")
-  }
-}
 </script>
 
 <template>

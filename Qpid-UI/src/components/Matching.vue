@@ -20,38 +20,38 @@ interface UserProfile {
   bio: string
 }
 
-const dummyUsers: UserProfile[] = [
-  {
-    id: 'n3',
-    name: 'εИ',
-    department: 'algo, game, sysad',
-    faculty: '情報理工学院 情報工学系 B2',
-    origin: '高知県',
-    like_category: '食べ物',
-    like_thing: 'ラーメン',
-    dislike_category: '言語',
-    dislike_thing: 'TEX',
-    tool: 'Python',
-    hobby: '勉学、くねくね、料理',
-    status: 'オートマトンおじさん',
-    bio: 'Pythonはいいぞ！\n最近サウンドを始めました\naaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\naaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\naaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\naaaaaaaaaaaaaaaaaaaaaaaaaaa\naaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\naaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\naaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\naaaaaaaaaaaaaaaaaaaaaaaaaaa'
-  },
-  {
-    id: "Suima",
-    name: '睡魔',
-    department: 'all',
-    faculty: '生命理工学院 B2',
-    origin: '東京都',
-    like_category: '飲み物',
-    like_thing: 'Monster',
-    dislike_category: '言葉',
-    dislike_thing: 'およー',
-    tool: 'Tex',
-    hobby: 'Tex,',
-    status: 'TeXおじさん',
-    bio: 'TeXをやりましょう'
-  }
-]
+// const dummyUsers: UserProfile[] = [
+//   {
+//     id: 'n3',
+//     name: 'εИ',
+//     department: 'algo, game, sysad',
+//     faculty: '情報理工学院 情報工学系 B2',
+//     origin: '高知県',
+//     like_category: '食べ物',
+//     like_thing: 'ラーメン',
+//     dislike_category: '言語',
+//     dislike_thing: 'TEX',
+//     tool: 'Python',
+//     hobby: '勉学、くねくね、料理',
+//     status: 'オートマトンおじさん',
+//     bio: 'Pythonはいいぞ！\n最近サウンドを始めました\naaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\naaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\naaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\naaaaaaaaaaaaaaaaaaaaaaaaaaa\naaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\naaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\naaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\naaaaaaaaaaaaaaaaaaaaaaaaaaa'
+//   },
+//   {
+//     id: "Suima",
+//     name: '睡魔',
+//     department: 'all',
+//     faculty: '生命理工学院 B2',
+//     origin: '東京都',
+//     like_category: '飲み物',
+//     like_thing: 'Monster',
+//     dislike_category: '言葉',
+//     dislike_thing: 'およー',
+//     tool: 'Tex',
+//     hobby: 'Tex,',
+//     status: 'TeXおじさん',
+//     bio: 'TeXをやりましょう'
+//   }
+// ]
 
 const currentUserIndex = ref(0)
 const currentUser = ref<UserProfile | null>(null)
@@ -77,7 +77,7 @@ const handleAction = (action: 'Like' | 'Nope') => {
   // 次のユーザーへ（データがなくなったらnull）
   currentUserIndex.value++
   if (currentUserIndex.value < users.value.length) {
-    const nextUser = dummyUsers[currentUserIndex.value];
+    const nextUser = users.value[currentUserIndex.value];
     currentUser.value = nextUser !== undefined ? nextUser : null;
   }else {
     currentUser.value = null
@@ -134,22 +134,52 @@ const getReccomend = async() =>{
 
     if(!response.ok){
       console.log("Error : Not OK")
+      const errorText = await response.text();
+      console.log("バックエンドから返ってきた生の文字:", errorText);
     }
     // const errorText = await response.text();
     // console.log("バックエンドから返ってきた生の文字:", errorText);
-    const userData = await response.json();
-    console.log("APIから取得したデータ:", userData)
+    const suggestions = await response.json();    
+    console.log("[getReccomend]APIから取得したデータ:", suggestions)
+    await getReccomendUser(suggestions.map((s: any) => s.username));
     
   }catch(error){
     console.log("Error : ",error)
     toast.error("通信エラーが発生しました")
+  }
 }
-}
+
+const getReccomendUser = async (userIDs: Array<string>) => {
+  try {
+    const userPromises = userIDs.map(async (id) => {
+      const res = await fetch(`/api/users/${id}`);
+      if (!res.ok) return null;
+      return res.json();
+    });
+
+    const results = await Promise.all(userPromises);
+    
+    // 取得できたユーザーのみを格納 (nullを除外)
+    users.value = results.filter((u) => u !== null);
+    
+    // 最初のユーザーをセット
+    if (users.value.length > 0) {
+      currentUser.value = users.value[0]??null;
+      currentUserIndex.value = 0;
+    }
+    console.log("[getReccomend]ユーザー取得成功")
+  } catch (error) {
+    console.error("ユーザー詳細取得エラー:", error);
+  }
+};
 
 onMounted(() => {
   window.addEventListener('keydown', handleKeyDown)
-  users.value=dummyUsers
-  currentUser.value = dummyUsers[0] ?? null}
+  console.log("Matching Start...")
+  getReccomend()
+  //users.value=dummyUsers
+  //currentUser.value = dummyUsers[0] ?? null
+  }
 )
 onUnmounted(() => {
   window.removeEventListener('keydown', handleKeyDown)
