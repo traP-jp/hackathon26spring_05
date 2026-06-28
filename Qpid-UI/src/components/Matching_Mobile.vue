@@ -72,6 +72,9 @@ const handleAction = (action: 'Like' | 'Nope') => {
 // 3. マウス・スマホのドラッグ/スワイプイベントハンドラ
 // 1. 各イベントの型を明示的に指定（Vue 3 / TypeScript環境）
 const touchStart = (e: any) => {
+  // 表示するユーザーがもういない場合は、スワイプ操作を受け付けない
+  if (!currentUser.value) return
+
   isDragging = true
   startX = e.touches ? e.touches[0].clientX : e.clientX
 }
