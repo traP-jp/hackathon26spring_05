@@ -18,21 +18,20 @@ func (h *handler) updateMyIcon(c *echo.Context) error {
 		return unauthorized(c)
 	}
 
-	file, err := (*c).FormFile("icon")
+	file, err := c.FormFile("icon")
 	if err != nil {
 		return c.JSON(http.StatusBadRequest, errorResponse{Message: "icon file is required"})
 	}
 
 	src, err := file.Open()
 	if err != nil {
-		return c.JSON(http.StatusBadRequest, errorResponse{Message: "cannot open icon file"})
-
+		return c.JSON(http.StatusInternalServerError, errorResponse{Message: "cannot open icon file"})
 	}
-	defer src.Close()
+	defer func() { _ = src.Close() }()
 
 	blob, err := io.ReadAll(src)
 	if err != nil {
-		return c.JSON(http.StatusInternalServerError, errorResponse{Message: "failed to load user"})
+		return c.JSON(http.StatusInternalServerError, errorResponse{Message: "failed to load icon file"})
 	}
 
 	mimeType := domain.IconMimeType(http.DetectContentType(blob))
@@ -47,7 +46,7 @@ func (h *handler) updateMyIcon(c *echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, errorResponse{Message: "failed to save icon"})
 	}
 
-	return (*c).NoContent(http.StatusNoContent)
+	return c.NoContent(http.StatusNoContent)
 }
 
 // DELETE /api/me/icon
@@ -66,11 +65,14 @@ func (h *handler) deleteMyIcon(c *echo.Context) error {
 
 // GET /api/users/:id/icon
 func (h *handler) getUserIcon(c *echo.Context) error {
-	username := (*c).Param("id")
+	username, err := echo.PathParam[string](c, "id")
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, errorResponse{Message: "invalid path parameter"})
+	}
 
 	icon, err := h.repository.FindIconByUsername(username)
 	if err != nil {
-		return c.JSON(http.StatusInternalServerError, errorResponse{Message: "failed to load user"})
+		return c.JSON(http.StatusInternalServerError, errorResponse{Message: "failed to find icon file"})
 	}
 	if icon == nil {
 		return notFound(c)
