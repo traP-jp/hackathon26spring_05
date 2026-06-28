@@ -34,7 +34,7 @@ const dummyUsers: UserProfile[] = [
     tool: 'Python',
     hobby: '勉学、くねくね、料理',
     status: 'オートマトンおじさん',
-    bio: 'Pythonはいいぞ！\n最近サウンドを始めました'
+    bio: 'Pythonはいいぞ！\n最近サウンドを始めました\naaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\naaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\naaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\naaaaaaaaaaaaaaaaaaaaaaaaaaa\naaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\naaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\naaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\naaaaaaaaaaaaaaaaaaaaaaaaaaa'
   },
   {
     id: "Suima",
@@ -324,11 +324,18 @@ onUnmounted(() => {
 
 .bio-text {
   white-space: pre-wrap;
+  word-break: break-all;
   background: #f1f3f5;
   padding: 12px;
   border-radius: 8px;
   font-size: 0.95rem;
   margin-top: 6px;
+  /*長すぎる自己紹介をマッチング画面で省略*/
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 5;
+  line-clamp: 5;
+  overflow: hidden;
 }
 
 /* --- 中央のアバター（画面のど真ん中に固定） --- */
