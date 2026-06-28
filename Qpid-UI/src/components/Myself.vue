@@ -6,6 +6,7 @@ import { toast } from 'vue3-toastify'
 interface UserProfile {
   id: string
   name: string
+  hasIcon: boolean
   faculty: string
   origin: string
   like_category: string
@@ -13,8 +14,8 @@ interface UserProfile {
   dislike_category: string
   dislike_thing: string
   affiliations:string[]
-  tool: string[]
-  hobbies: string[]
+  technologies: string[]
+  tags: string[]
   status: string
   bio: string
 }
@@ -27,6 +28,7 @@ interface UserResponse{
 const editForm = ref<UserProfile>({
   id:'',
   name: '',
+  hasIcon: false,
   faculty: '',
   origin: '',
   like_category: '',
@@ -34,14 +36,15 @@ const editForm = ref<UserProfile>({
   dislike_category: '',
   dislike_thing: '',
   affiliations: [],
-  tool: [],
-  hobbies: [],
+  technologies: [],
+  tags: [],
   status: '',
   bio: ''
 })
 const editFormDemo = ref<UserProfile>({
   id:'n3',
   name: 'εИ',
+  hasIcon: false,
   faculty: '情報理工学院 情報工学系 B2',
   origin: '高知県',
   like_category: '食べ物',
@@ -49,8 +52,8 @@ const editFormDemo = ref<UserProfile>({
   dislike_category: '言語',
   dislike_thing: 'TEX',
   affiliations:['algo','game','sound'],
-  tool: ['Python','Go'],
-  hobbies: ['勉強', 'くねくね', '料理'],
+  technologies: ['Python','Go'],
+  tags: ['勉強', 'くねくね', '料理'],
   status: 'オートマトンおじさん',
   bio: 'Pythonはいいぞ！\n最近サウンドを始めました'
 })
@@ -62,10 +65,10 @@ const newTechInput = ref('')
 // 変更を保存する（APIを叩く場合はここで行います）
 const saveProfile = () => {
   // --- ここから追加：タグの文字数制限チェック ---
-  const hasTooLongTool = editForm.value.tool.some(tag => tag.length > 16)
-  const hasTooLongHobby = editForm.value.hobbies.some(tag => tag.length > 16)
+  const hasTooLongTool = editForm.value.technologies.some(tag => tag.length > 16)
+  const hasTooLongTag = editForm.value.tags.some(tag => tag.length > 16)
 
-  if (hasTooLongTool || hasTooLongHobby) {
+  if (hasTooLongTool || hasTooLongTag) {
     toast.error('16文字を超えるタグが含まれています。修正してください。')
     return // 16文字超えがあればここで処理を止めてAPIを叩かせない
   }
@@ -79,32 +82,32 @@ const saveProfile = () => {
 const addHobbyTag = () => {
   const tag = newHobbyInput.value.trim()
   if (!tag) return
-  if (editForm.value.hobbies.includes(tag)) {
+  if (editForm.value.tags.includes(tag)) {
     toast.warning('既に存在するタグです')
     return
   }
-  editForm.value.hobbies.push(tag)
+  editForm.value.tags.push(tag)
   newHobbyInput.value = ''
 }
 
 const addTechTool = () => {
   const tech = newTechInput.value.trim()
   if (!tech) return
-  if (editForm.value.tool.includes(tech)) {
+  if (editForm.value.technologies.includes(tech)) {
     toast.warning('既に存在するタグです')
     return
   }
-  editForm.value.tool.push(tech)
+  editForm.value.technologies.push(tech)
   newTechInput.value = ''
 }
 // 趣味タグの削除
 const removeHobbyTag = (index: number) => {
-  editForm.value.hobbies.splice(index, 1)
+  editForm.value.tags.splice(index, 1)
 }
 
 // 好きな創作ツールの削除
 const removeTechTool = (index: number) => {
-  editForm.value.tool.splice(index, 1)
+  editForm.value.technologies.splice(index, 1)
 }
 
 const getMe = async() => {
@@ -127,10 +130,18 @@ const getMe = async() => {
     const userData = await response.json();
     console.log("APIから取得したデータ:", userData)
     editForm.value.id=userData.username;
+    editForm.value.name=userData.displayName;
+    editForm.value.hasIcon=userData.hasIcon;
     editForm.value.faculty=userData.major;
     editForm.value.origin=userData.hometown;
     editForm.value.bio=userData.bio;
     editForm.value.affiliations=userData.affiliations;
+    editForm.value.tags=userData.tags ?? [];
+    editForm.value.technologies=userData.technologies ?? [];
+    editForm.value.like_category=userData.favoriteTopic?.topic ?? '';
+    editForm.value.like_thing=userData.favoriteTopic?.value ?? '';
+    editForm.value.dislike_category=userData.dislikedTopic?.topic ?? '';
+    editForm.value.dislike_thing=userData.dislikedTopic?.value ?? '';
     console.log(editForm.value);
 
     
@@ -150,14 +161,26 @@ const updateMe = async() =>{
       },
       // コメントアウトを解除し、JSONに変換してすべての入力データをバックエンドへ送信
       body: JSON.stringify({
-        iconFieldID: null,
+        hasIcon: editForm.value.hasIcon,
         major: editForm.value.faculty,
         affiliations: editForm.value.affiliations,
         hometown: editForm.value.origin,
-        // 趣味タグと創作ツールを合体してバックエンドのtagsに送る設定
-        tags: [...editForm.value.hobbies, ...editForm.value.tool],
+        tags: editForm.value.tags,
+        technologies: editForm.value.technologies,
         status: editForm.value.status, // 普段の様子
-        bio: editForm.value.bio        // 自由記述欄
+        bio: editForm.value.bio,       // 自由記述欄
+        favoriteTopic: editForm.value.like_category || editForm.value.like_thing
+          ? {
+              topic: editForm.value.like_category,
+              value: editForm.value.like_thing,
+            }
+          : null,
+        dislikedTopic: editForm.value.dislike_category || editForm.value.dislike_thing
+          ? {
+              topic: editForm.value.dislike_category,
+              value: editForm.value.dislike_thing,
+            }
+          : null
       })
     });
 
@@ -171,10 +194,18 @@ const updateMe = async() =>{
     const userData = await response.json();
     console.log("APIから取得したデータ:", userData)
     editForm.value.id=userData.username;
+    editForm.value.name=userData.displayName;
+    editForm.value.hasIcon=userData.hasIcon;
     editForm.value.faculty=userData.major;
     editForm.value.origin=userData.hometown;
     editForm.value.bio=userData.bio;
     editForm.value.affiliations=userData.affiliations;
+    editForm.value.tags=userData.tags ?? [];
+    editForm.value.technologies=userData.technologies ?? [];
+    editForm.value.like_category=userData.favoriteTopic?.topic ?? '';
+    editForm.value.like_thing=userData.favoriteTopic?.value ?? '';
+    editForm.value.dislike_category=userData.dislikedTopic?.topic ?? '';
+    editForm.value.dislike_thing=userData.dislikedTopic?.value ?? '';
     console.log(editForm.value);
 
     toast.success("プロフィールを保存しました！")
@@ -271,7 +302,7 @@ onMounted(()=>{
               </div>
 
               <div class="tags-container">
-                <div v-for="(tag, idx) in editForm.tool" :key="idx" class="tag-item editable">
+                <div v-for="(tag, idx) in editForm.technologies" :key="idx" class="tag-item editable">
                   <span class="btn-remove-tag" @click="removeTechTool(idx)">×</span>
                   #{{ tag }}
                 </div>
@@ -294,7 +325,7 @@ onMounted(()=>{
               </div>
 
               <div class="tags-container">
-                <div v-for="(tag, idx) in editForm.hobbies" :key="idx" class="tag-item editable">
+                <div v-for="(tag, idx) in editForm.tags" :key="idx" class="tag-item editable">
                   <span class="btn-remove-tag" @click="removeHobbyTag(idx)">×</span>
                   #{{ tag }}
                 </div>
