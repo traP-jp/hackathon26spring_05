@@ -1,9 +1,10 @@
 package handler
 
 import (
+	"log/slog"
 	"net/http"
 
-	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v5"
 	"github.com/moznion/go-optional"
 	"github.com/traP-jp/hackathon26spring_05/Qpid/domain"
 )
@@ -28,13 +29,18 @@ type topicAndValueResponse struct {
 }
 
 // GET /api/users/:id
-func (h *handler) getUser(c echo.Context) error {
+func (h *handler) getUser(c *echo.Context) error {
 	// ② パスパラメータから「id」を取得
 	userID := c.Param("id")
 
 	// ③ データベース等からユーザーを取得
 	user, err := h.repository.FindUserByUsername(userID)
 	if err != nil {
+		c.Logger().Error(
+			"failed to find user",
+			slog.String("username", userID),
+			slog.Any("error", err),
+		)
 		return c.JSON(http.StatusInternalServerError, errorResponse{Message: "failed to load user"})
 	}
 	if user == nil {

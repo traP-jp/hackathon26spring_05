@@ -2,16 +2,17 @@ package handler
 
 import (
 	"errors"
+	"log/slog"
 	"net/http"
 
-	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v5"
 	"github.com/moznion/go-optional"
 	"github.com/traP-jp/hackathon26spring_05/Qpid/domain"
 	"github.com/traP-jp/hackathon26spring_05/Qpid/handler/middleware"
 )
 
 // GET /api/me
-func (h *handler) getMe(c echo.Context) error {
+func (h *handler) getMe(c *echo.Context) error {
 	username := middleware.GetUsername(c)
 	if username == nil {
 		return unauthorized(c)
@@ -19,9 +20,18 @@ func (h *handler) getMe(c echo.Context) error {
 
 	user, err := h.repository.FindUserByUsername(*username)
 	if err != nil {
+		c.Logger().Error(
+			"failed to find user",
+			slog.String("username", *username),
+			slog.Any("error", err),
+		)
 		return c.JSON(http.StatusInternalServerError, errorResponse{Message: "failed to load user"})
 	}
 	if user == nil {
+		c.Logger().Error(
+			"authenticated user was not found",
+			slog.String("username", *username),
+		)
 		return c.JSON(http.StatusInternalServerError, errorResponse{Message: "user not found"})
 	}
 
@@ -57,7 +67,7 @@ func toDomainTopicAndValue(updateTopicAndValue optional.Option[updateTopicAndVal
 }
 
 // PUT /api/me
-func (h *handler) updateMe(c echo.Context) error {
+func (h *handler) updateMe(c *echo.Context) error {
 	username := middleware.GetUsername(c)
 	if username == nil {
 		return unauthorized(c)
@@ -82,6 +92,11 @@ func (h *handler) updateMe(c echo.Context) error {
 	}
 
 	if err := h.repository.UpdateUser(*username, userData); err != nil {
+		c.Logger().Error(
+			"failed to update user",
+			slog.String("username", *username),
+			slog.Any("error", err),
+		)
 		return c.JSON(http.StatusInternalServerError, errorResponse{Message: "failed to update user"})
 	}
 
@@ -105,7 +120,7 @@ func toUserSummaryResponses(users []domain.UserSummary) ([]userSummaryResponse, 
 }
 
 // GET /api/me/likes
-func (h *handler) listMyLikes(c echo.Context) error {
+func (h *handler) listMyLikes(c *echo.Context) error {
 	username := middleware.GetUsername(c)
 	if username == nil {
 		return unauthorized(c)
@@ -113,11 +128,21 @@ func (h *handler) listMyLikes(c echo.Context) error {
 
 	users, err := h.repository.ListLikedUsers(*username)
 	if err != nil {
+		c.Logger().Error(
+			"failed to list liked users",
+			slog.String("username", *username),
+			slog.Any("error", err),
+		)
 		return c.JSON(http.StatusInternalServerError, errorResponse{Message: "failed to list liked users"})
 	}
 
 	result, err := toUserSummaryResponses(users)
 	if err != nil {
+		c.Logger().Error(
+			"failed to convert liked users",
+			slog.String("username", *username),
+			slog.Any("error", err),
+		)
 		return c.JSON(http.StatusInternalServerError, errorResponse{Message: "failed to validate liked users"})
 	}
 	return c.JSON(http.StatusOK, result)
@@ -128,7 +153,7 @@ type userActionRequest struct {
 }
 
 // POST /api/me/likes
-func (h *handler) likeUser(c echo.Context) error {
+func (h *handler) likeUser(c *echo.Context) error {
 	username := middleware.GetUsername(c)
 	if username == nil {
 		return unauthorized(c)
@@ -148,6 +173,12 @@ func (h *handler) likeUser(c echo.Context) error {
 
 	isExist, err := h.repository.IsUserExists(toUser.Username)
 	if err != nil {
+		c.Logger().Error(
+			"failed to check if user exists before like",
+			slog.String("username", *username),
+			slog.String("targetUsername", toUser.Username),
+			slog.Any("error", err),
+		)
 		return c.JSON(http.StatusInternalServerError, errorResponse{Message: "failed to check user existence"})
 	}
 	if !isExist {
@@ -156,6 +187,12 @@ func (h *handler) likeUser(c echo.Context) error {
 
 	isActionExist, err := h.repository.IsActionExists(*username, toUser.Username)
 	if err != nil {
+		c.Logger().Error(
+			"failed to check if action exists before like",
+			slog.String("username", *username),
+			slog.String("targetUsername", toUser.Username),
+			slog.Any("error", err),
+		)
 		return c.JSON(http.StatusInternalServerError, errorResponse{Message: "failed to check action existence"})
 	}
 	if isActionExist {
@@ -163,6 +200,12 @@ func (h *handler) likeUser(c echo.Context) error {
 	}
 
 	if err = h.repository.LikeUser(*username, toUser.Username); err != nil {
+		c.Logger().Error(
+			"failed to like user",
+			slog.String("username", *username),
+			slog.String("targetUsername", toUser.Username),
+			slog.Any("error", err),
+		)
 		return c.JSON(http.StatusInternalServerError, errorResponse{Message: "failed to like user"})
 	}
 
@@ -170,7 +213,7 @@ func (h *handler) likeUser(c echo.Context) error {
 }
 
 // GET /api/me/liked-by
-func (h *handler) listUsersWhoLikedMe(c echo.Context) error {
+func (h *handler) listUsersWhoLikedMe(c *echo.Context) error {
 	username := middleware.GetUsername(c)
 	if username == nil {
 		return unauthorized(c)
@@ -190,11 +233,21 @@ func (h *handler) listUsersWhoLikedMe(c echo.Context) error {
 
 	users, err := h.repository.ListUsersWhoLiked(*username)
 	if err != nil {
+		c.Logger().Error(
+			"failed to list users who liked user",
+			slog.String("username", *username),
+			slog.Any("error", err),
+		)
 		return c.JSON(http.StatusInternalServerError, errorResponse{Message: "failed to list users who liked me"})
 	}
 
 	result, err := toUserSummaryResponses(users)
 	if err != nil {
+		c.Logger().Error(
+			"failed to convert users who liked user",
+			slog.String("username", *username),
+			slog.Any("error", err),
+		)
 		return c.JSON(http.StatusInternalServerError, errorResponse{Message: "failed to validate liked-by users"})
 	}
 
@@ -202,7 +255,7 @@ func (h *handler) listUsersWhoLikedMe(c echo.Context) error {
 }
 
 // POST /api/me/nopes
-func (h *handler) nopeUser(c echo.Context) error {
+func (h *handler) nopeUser(c *echo.Context) error {
 	username := middleware.GetUsername(c)
 	if username == nil {
 		return unauthorized(c)
@@ -222,6 +275,12 @@ func (h *handler) nopeUser(c echo.Context) error {
 
 	isExist, err := h.repository.IsUserExists(toUser.Username)
 	if err != nil {
+		c.Logger().Error(
+			"failed to check if user exists before nope",
+			slog.String("username", *username),
+			slog.String("targetUsername", toUser.Username),
+			slog.Any("error", err),
+		)
 		return c.JSON(http.StatusInternalServerError, errorResponse{Message: "failed to check user existence"})
 	}
 	if !isExist {
@@ -230,6 +289,12 @@ func (h *handler) nopeUser(c echo.Context) error {
 
 	isActionExist, err := h.repository.IsActionExists(*username, toUser.Username)
 	if err != nil {
+		c.Logger().Error(
+			"failed to check if action exists before nope",
+			slog.String("username", *username),
+			slog.String("targetUsername", toUser.Username),
+			slog.Any("error", err),
+		)
 		return c.JSON(http.StatusInternalServerError, errorResponse{Message: "failed to check action existence"})
 	}
 	if isActionExist {
@@ -237,6 +302,12 @@ func (h *handler) nopeUser(c echo.Context) error {
 	}
 
 	if err = h.repository.NopeUser(*username, toUser.Username); err != nil {
+		c.Logger().Error(
+			"failed to nope user",
+			slog.String("username", *username),
+			slog.String("targetUsername", toUser.Username),
+			slog.Any("error", err),
+		)
 		return c.JSON(http.StatusInternalServerError, errorResponse{Message: "failed to nope user"})
 	}
 

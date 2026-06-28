@@ -6,28 +6,39 @@ import (
 )
 
 type Env struct {
-	Environment string
+	Environment     string
+	TraqHost        string
+	TraqAccessToken string
 }
 
 const (
-	EnvironmentLocal      = "local"
-	EnvironmentProduction = "production"
+	envKeyEnvironment     = "ENVIRONMENT"
+	envKeyTraqHost        = "TRAQ_HOST"
+	envKeyTraqAccessToken = "TRAQ_ACCESS_TOKEN"
+)
+
+const (
+	environmentLocal      = "local"
+	environmentProduction = "production"
+	defaultTraqHost       = "https://q.trap.jp"
 )
 
 func (e *Env) IsLocal() bool {
-	return e.Environment == EnvironmentLocal
+	return e.Environment == environmentLocal
 }
 
 func (e *Env) IsProduction() bool {
-	return e.Environment == EnvironmentProduction
+	return e.Environment == environmentProduction
 }
 
 func GetEnv() Env {
-	environment := cmp.Or(os.Getenv("ENVIRONMENT"), EnvironmentLocal)
-	if environment != EnvironmentLocal && environment != EnvironmentProduction {
-		environment = EnvironmentLocal
+	environment := cmp.Or(os.Getenv(envKeyEnvironment), environmentLocal)
+	if environment != environmentLocal && environment != environmentProduction {
+		environment = environmentLocal
 	}
 	return Env{
-		Environment: environment,
+		Environment:     environment,
+		TraqHost:        cmp.Or(os.Getenv(envKeyTraqHost), defaultTraqHost),
+		TraqAccessToken: os.Getenv(envKeyTraqAccessToken),
 	}
 }
