@@ -11,11 +11,15 @@ import (
 var _ repository.Repository = (*MockRepository)(nil)
 
 // MockRepository の mock 実装。
-type MockRepository struct{}
+type MockRepository struct {
+	actions map[string]map[string]struct{}
+}
 
 // mock Repository を作成する。
 func NewMockRepository() *MockRepository {
-	return &MockRepository{}
+	return &MockRepository{
+		actions: make(map[string]map[string]struct{}),
+	}
 }
 
 // ユーザーを作成する。
@@ -40,11 +44,13 @@ func (r *MockRepository) IsUserExists(username string) (bool, error) {
 
 // ユーザーを LIKE する。
 func (r *MockRepository) LikeUser(fromUsername, toUsername string) error {
+	r.addAction(fromUsername, toUsername)
 	return nil
 }
 
 // ユーザーを NOPE する。
 func (r *MockRepository) NopeUser(fromUsername, toUsername string) error {
+	r.addAction(fromUsername, toUsername)
 	return nil
 }
 
@@ -60,7 +66,12 @@ func (r *MockRepository) ListUsersWhoLiked(username string) ([]domain.UserSummar
 
 // アクション済みか確認する。
 func (r *MockRepository) IsActionExists(fromUsername, toUsername string) (bool, error) {
-	return false, nil
+	toUsers, ok := r.actions[fromUsername]
+	if !ok {
+		return false, nil
+	}
+	_, ok = toUsers[toUsername]
+	return ok, nil
 }
 
 // おすすめユーザーを取得する。
@@ -75,7 +86,11 @@ func (r *MockRepository) ListSuggestions(username string, limit int) ([]domain.S
 
 	filtered := make([]domain.Suggestion, 0, len(users))
 	for _, user := range users {
-		if user.Username != username {
+		isActionExists, err := r.IsActionExists(username, user.Username)
+		if err != nil {
+			return nil, err
+		}
+		if user.Username != username && !isActionExists {
 			filtered = append(filtered, user)
 		}
 	}
@@ -93,6 +108,13 @@ func (r *MockRepository) ListSuggestions(username string, limit int) ([]domain.S
 	}
 
 	return filtered[:limit], nil
+}
+
+func (r *MockRepository) addAction(fromUsername, toUsername string) {
+	if _, ok := r.actions[fromUsername]; !ok {
+		r.actions[fromUsername] = make(map[string]struct{})
+	}
+	r.actions[fromUsername][toUsername] = struct{}{}
 }
 
 // 類似度を保存する。

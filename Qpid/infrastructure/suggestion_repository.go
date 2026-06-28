@@ -5,7 +5,19 @@ import "github.com/traP-jp/hackathon26spring_05/Qpid/domain"
 // おすすめユーザーを取得する。
 func (r *repositoryImpl) ListSuggestions(username string, limit int) ([]domain.Suggestion, error) {
 	var users []domain.Suggestion
-	err := r.db.Select(&users, "SELECT username FROM users ORDER BY RAND() LIMIT ?", limit)
+	err := r.db.Select(&users, `
+		SELECT username
+		FROM users
+		WHERE username <> ?
+			AND NOT EXISTS (
+				SELECT 1
+				FROM actions
+				WHERE actions.from_username = ?
+					AND actions.to_username = users.username
+			)
+		ORDER BY RAND()
+		LIMIT ?
+	`, username, username, limit)
 	if err != nil {
 		return nil, err
 	}
