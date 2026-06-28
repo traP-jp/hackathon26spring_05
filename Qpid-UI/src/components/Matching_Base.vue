@@ -18,6 +18,7 @@ const handleResize = () => {
 
 onMounted(() => {
   window.addEventListener('resize', handleResize)
+  console.log("matching base loaded...")
 });
 onUnmounted(() => window.removeEventListener('resize', handleResize));
 </script>

@@ -175,6 +175,7 @@ const getReccomendUser = async (userIDs: Array<string>) => {
 
 onMounted(() => {
   window.addEventListener('keydown', handleKeyDown)
+  console.log("Matching Start...")
   getReccomend()
   //users.value=dummyUsers
   //currentUser.value = dummyUsers[0] ?? null
