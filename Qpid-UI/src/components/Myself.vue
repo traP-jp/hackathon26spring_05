@@ -23,7 +23,7 @@ interface UserResponse{
   username:string
 }
 
-// 初期データ
+// 初期の仮データ
 const editForm = ref<UserProfile>({
   id:'',
   name: '',
