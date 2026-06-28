@@ -94,6 +94,7 @@ func (r *MockRepository) ListSuggestions(username string, limit int) ([]domain.S
 
 	return filtered[:limit], nil
 }
+
 // 類似度を保存する。
 func (r *MockRepository) UpsertSimilarity(usernameA, usernameB string, similarity float64) error {
 	return nil
