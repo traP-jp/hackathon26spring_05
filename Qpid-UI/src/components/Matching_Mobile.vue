@@ -3,20 +3,23 @@ import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { toast } from 'vue3-toastify';
 import 'vue3-toastify/dist/index.css';
 
-// 1. ダミーのユーザーデータ（バックエンドと接続するまでの繋ぎ）
 interface UserProfile {
-  username: string       // DBの PRIMARY KEY
-  name: string           // 班の人が残してほしいと言っていたサークルの人の名前
-  major: string          // 学部/系
-  hometown: string       // 出身
-  like_topic: string     // 好きな〇〇（カテゴリ名）
-  like_value: string     // 好きなものの具体的な値
-  dislike_topic: string  // 嫌いな〇〇（カテゴリ名）
-  dislike_value: string  // 嫌いなものの具体的な値
-  tool: string           // 好きな創作ツール
-  usual_situation: string // 普段の様子
-  bio: string            // 自由記述欄
-  tags?: string[]        // DBのtagsテーブルから取得する想定の趣味タグ
+  username: string
+  displayName: string
+  major: string | null
+  hometown: string | null
+  favoriteTopic: {
+    topic: string
+    value: string
+  } | null
+  dislikedTopic: {
+    topic: string
+    value: string
+  } | null
+  technologies: string[]
+  status?: string | null
+  bio: string | null
+  tags: string[]
 }
 
 
@@ -56,8 +59,11 @@ const notify = (name: string|undefined, action: string) => {
 }
 
 // アクション処理
-const handleAction = (action: 'Like' | 'Nope') => {
-  notify(currentUser.value?.name, action);
+const handleAction = async (action: 'Like' | 'Nope') => {
+  if (!currentUser.value) return
+
+  await sendAction(action, currentUser.value.username)
+  notify(currentUser.value?.displayName, action);
   
   currentUserIndex.value++
   if (currentUserIndex.value < users.value.length) {
@@ -124,9 +130,9 @@ const getReccomend = async() =>{
       console.log("Error : Not OK")
       const errorText = await response.text();
       console.log("バックエンドから返ってきた生の文字:", errorText);
+      return
     }
-    // const errorText = await response.text();
-    // console.log("バックエンドから返ってきた生の文字:", errorText);
+
     const suggestions = await response.json();    
     console.log("[getReccomend]APIから取得したデータ:", suggestions)
     await getReccomendUser(suggestions.map((s: any) => s.username));
@@ -148,16 +154,43 @@ const getReccomendUser = async (userIDs: Array<string>) => {
     const results = await Promise.all(userPromises);
     
     // 取得できたユーザーのみを格納 (nullを除外)
-    users.value = results.filter((u) => u !== null);
+    users.value = results.filter((u): u is UserProfile => u !== null);
     
     // 最初のユーザーをセット
     if (users.value.length > 0) {
       currentUser.value = users.value[0]??null;
       currentUserIndex.value = 0;
+    } else {
+      currentUser.value = null;
     }
     console.log("[getReccomend]ユーザー取得成功")
   } catch (error) {
     console.error("ユーザー詳細取得エラー:", error);
+  }
+};
+
+const sendAction = async (action: 'Like' | 'Nope', username: string) => {
+  const endpoint = action === 'Like' ? '/api/me/likes' : '/api/me/nopes';
+
+  try {
+    const response = await fetch(endpoint, {
+      method: 'POST',
+      headers: {
+        'content-type': 'application/json'
+      },
+      body: JSON.stringify({ username })
+    });
+
+    if (response.status === 204) {
+      console.log(`${action} 成功: ${username}`);
+    } else if (response.status === 409) {
+      toast.warn("既にアクション済みです");
+    } else {
+      throw new Error(`アクション失敗: ${response.status}`);
+    }
+  } catch (error) {
+    console.error("通信エラー:", error);
+    toast.error("アクションの送信に失敗しました");
   }
 };
 
@@ -214,7 +247,7 @@ onUnmounted(() => {
           <div class="avatar-box">
             <img :src="`https://q.trap.jp/api/v3/public/icon/${currentUser.username}`" alt="avatar" class="avatar-img" draggable="false" />
           </div>
-          <h2 class="user-name">{{ currentUser.name }}</h2>
+          <h2 class="user-name">{{ currentUser.displayName }}</h2>
           <span class="user-id">@{{ currentUser.username }}</span>
         </div>
 
@@ -232,7 +265,7 @@ onUnmounted(() => {
 
           <div class="info-item">
             <span class="label">好きな創作ツール:</span> 
-            <span class="value font-badge tool-badge">{{ currentUser.tool }}</span>
+            <span class="value font-badge tool-badge">{{ currentUser.technologies?.join(', ') }}</span>
           </div>
 
           <div v-if="currentUser.tags && currentUser.tags.length > 0" class="info-item">
@@ -243,18 +276,18 @@ onUnmounted(() => {
           </div>
 
           <div class="info-item">
-            <span class="label">好きな{{ currentUser.like_topic }}:</span> 
-            <span class="value">{{ currentUser.like_value }}</span>
+            <span class="label">好きな{{ currentUser.favoriteTopic?.topic }}:</span> 
+            <span class="value">{{ currentUser.favoriteTopic?.value }}</span>
           </div>
 
           <div class="info-item">
-            <span class="label">嫌いな{{ currentUser.dislike_topic }}:</span> 
-            <span class="value">{{ currentUser.dislike_value }}</span>
+            <span class="label">嫌いな{{ currentUser.dislikedTopic?.topic }}:</span> 
+            <span class="value">{{ currentUser.dislikedTopic?.value }}</span>
           </div>
 
-          <div class="info-item block-item">
+          <div v-if="currentUser.status" class="info-item block-item">
             <span class="label">普段の様子:</span> 
-            <p class="usual-text">{{ currentUser.usual_situation }}</p>
+            <p class="usual-text">{{ currentUser.status }}</p>
           </div>
 
           <div class="info-item block-item">
