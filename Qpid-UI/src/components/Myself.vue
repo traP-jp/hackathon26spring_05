@@ -119,10 +119,11 @@ const getMe = async() => {
 
     if(!response.ok){
       console.log("Error : Not OK")
-      editForm.value = { ...editFormDemo.value };
+      const errorText = await response.text();
+      console.log("バックエンドから返ってきた生の文字:", errorText);
+      //editForm.value = { ...editFormDemo.value };
     }
-    // const errorText = await response.text();
-    // console.log("バックエンドから返ってきた生の文字:", errorText);
+
     const userData = await response.json();
     console.log("APIから取得したデータ:", userData)
     editForm.value.id=userData.username;
