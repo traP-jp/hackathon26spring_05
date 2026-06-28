@@ -117,7 +117,7 @@ func (r *repositoryImpl) UpdateUser(username string, user domain.User) error {
 	}
 	defer tx.Rollback()
 
-	if _,err :=tx.Exec(`DELETE FROM users WHERE username = ?`,username);err !=nil{
+	if _, err := tx.Exec(`DELETE FROM users WHERE username = ?`, username); err != nil {
 		return err
 	}
 
