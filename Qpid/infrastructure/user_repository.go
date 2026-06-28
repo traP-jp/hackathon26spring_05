@@ -10,30 +10,45 @@ import (
 	"github.com/traP-jp/hackathon26spring_05/Qpid/domain"
 )
 
-type User struct {
-	username       string         `db:"username"`
-	createdAt      sql.NullTime   `db:"created_at"`
-	major          sql.NullString `db:"major"`
-	hometown       sql.NullString `db:"hometown"`
-	likeTopic      sql.NullString `db:"like_topic"`
-	likeValue      sql.NullString `db:"like_value"`
-	dislikeTopic   sql.NullString `db:"dislike_topic"`
-	dislikeValue   sql.NullString `db:"dislike_value"`
-	usualSituation sql.NullString `db:"usual_situation"`
-	bio            sql.NullString `db:"bio"`
+type userRow struct {
+	Username     string         `db:"username"`
+	Major        sql.NullString `db:"major"`
+	Hometown     sql.NullString `db:"hometown"`
+	LikeTopic    sql.NullString `db:"like_topic"`
+	LikeValue    sql.NullString `db:"like_value"`
+	DislikeTopic sql.NullString `db:"dislike_topic"`
+	DislikeValue sql.NullString `db:"dislike_value"`
+	Bio          sql.NullString `db:"bio"`
 }
 
 // ユーザーを作成する。
 func (r *repositoryImpl) CreateUser(user domain.User) error {
-	query := `INSERT INTO users (username) VALUES (?)`
-	_, err := r.db.Exec(query, user.Username)
-	return err
+	tx, err := r.db.Beginx()
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+
+	if err := insertUserProfile(tx, user.Username, user); err != nil {
+		return err
+	}
+	if err := r.updateUserTags(tx, user.Username, user.Tags); err != nil {
+		return err
+	}
+	if err := r.updateUserTechnologies(tx, user.Username, user.Technologies); err != nil {
+		return err
+	}
+
+	return tx.Commit()
 }
 
 // ユーザーを取得する。
 func (r *repositoryImpl) FindUserByUsername(username string) (*domain.User, error) {
-	var row User
-	query := `SELECT * FROM users WHERE username = ?`
+	var row userRow
+	query := `
+		SELECT username, major, hometown, like_topic, like_value, dislike_topic, dislike_value, bio
+		FROM users
+		WHERE username = ?`
 	if err := r.db.Get(&row, query, username); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, nil
@@ -42,14 +57,9 @@ func (r *repositoryImpl) FindUserByUsername(username string) (*domain.User, erro
 	}
 
 	var hasIcon bool
-	queryIcon := `SELECT 1 FROM icons WHERE username = ?`
+	queryIcon := `SELECT EXISTS (SELECT 1 FROM icons WHERE username = ?)`
 	if err := r.db.Get(&hasIcon, queryIcon, username); err != nil {
-		if !errors.Is(err, sql.ErrNoRows) {
-			return nil, err
-		}
-		hasIcon = false
-	} else {
-		hasIcon = true
+		return nil, err
 	}
 
 	var tags []string
@@ -65,12 +75,13 @@ func (r *repositoryImpl) FindUserByUsername(username string) (*domain.User, erro
 	}
 
 	user := &domain.User{
-		Username:      row.username,
-		Major:         convertNullString(row.major),
-		Hometown:      convertNullString(row.hometown),
-		Bio:           convertNullString(row.bio),
-		FavoriteTopic: convertTopic(row.likeTopic, row.likeValue),
-		DislikedTopic: convertTopic(row.dislikeTopic, row.dislikeValue),
+		Username:      row.Username,
+		HasIcon:       hasIcon,
+		Major:         convertNullString(row.Major),
+		Hometown:      convertNullString(row.Hometown),
+		Bio:           convertNullString(row.Bio),
+		FavoriteTopic: convertTopic(row.LikeTopic, row.LikeValue),
+		DislikedTopic: convertTopic(row.DislikeTopic, row.DislikeValue),
 		Tags:          tags,
 		Technologies:  tools,
 		Affiliations:  []domain.UserAffiliation{},
@@ -80,36 +91,6 @@ func (r *repositoryImpl) FindUserByUsername(username string) (*domain.User, erro
 
 // プロフィールを更新する。
 func (r *repositoryImpl) UpdateUser(username string, user domain.User) error {
-	major := sql.NullString{Valid: false}
-	if user.Major.IsSome() {
-		major = sql.NullString{String: user.Major.Unwrap(), Valid: true}
-	}
-
-	hometown := sql.NullString{Valid: false}
-	if user.Hometown.IsSome() {
-		hometown = sql.NullString{String: user.Hometown.Unwrap(), Valid: true}
-	}
-
-	bio := sql.NullString{Valid: false}
-	if user.Bio.IsSome() {
-		bio = sql.NullString{String: user.Bio.Unwrap(), Valid: true}
-	}
-
-	// Topic系は構造体の中身を確認してセット
-	likeTopic, likeValue := sql.NullString{Valid: false}, sql.NullString{Valid: false}
-	if user.FavoriteTopic.IsSome() {
-		t := user.FavoriteTopic.Unwrap()
-		likeTopic = sql.NullString{String: t.Topic, Valid: true}
-		likeValue = sql.NullString{String: t.Value, Valid: true}
-	}
-
-	dislikeTopic, dislikeValue := sql.NullString{Valid: false}, sql.NullString{Valid: false}
-	if user.DislikedTopic.IsSome() {
-		t := user.DislikedTopic.Unwrap()
-		dislikeTopic = sql.NullString{String: t.Topic, Valid: true}
-		dislikeValue = sql.NullString{String: t.Value, Valid: true}
-	}
-
 	// 更新クエリの実行
 	tx, err := r.db.Beginx()
 	if err != nil {
@@ -121,13 +102,7 @@ func (r *repositoryImpl) UpdateUser(username string, user domain.User) error {
 		return err
 	}
 
-	query := `
-		INSERT INTO users 
-		(username, major, hometown, like_topic, like_value, dislike_topic, dislike_value, bio)
-		VALUES(?,?,?,?,?,?,?,?)`
-
-	_, err = tx.Exec(query, username, major, hometown, likeTopic, likeValue, dislikeTopic, dislikeValue, bio)
-	if err != nil {
+	if err := insertUserProfile(tx, username, user); err != nil {
 		return err
 	}
 
@@ -142,18 +117,37 @@ func (r *repositoryImpl) UpdateUser(username string, user domain.User) error {
 	return tx.Commit()
 }
 
+func insertUserProfile(tx *sqlx.Tx, username string, user domain.User) error {
+	likeTopic, likeValue := toNullTopic(user.FavoriteTopic)
+	dislikeTopic, dislikeValue := toNullTopic(user.DislikedTopic)
+
+	query := `
+		INSERT INTO users
+		(username, major, hometown, like_topic, like_value, dislike_topic, dislike_value, bio)
+		VALUES(?,?,?,?,?,?,?,?)`
+
+	_, err := tx.Exec(
+		query,
+		username,
+		toNullString(user.Major),
+		toNullString(user.Hometown),
+		likeTopic,
+		likeValue,
+		dislikeTopic,
+		dislikeValue,
+		toNullString(user.Bio),
+	)
+	return err
+}
+
 // ユーザーの存在を確認する。
 func (r *repositoryImpl) IsUserExists(username string) (bool, error) {
-	var row User
-	query := `SELECT 1 FROM users WHERE username = ?`
-	if err := r.db.Get(&row, query, username); err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return false, nil
-		}
+	var exists bool
+	query := `SELECT EXISTS (SELECT 1 FROM users WHERE username = ?)`
+	if err := r.db.Get(&exists, query, username); err != nil {
 		return false, err
 	}
-	return true, nil
-
+	return exists, nil
 }
 
 // tagsテーブルを更新する。
@@ -180,9 +174,9 @@ func (r *repositoryImpl) updateUserTags(tx *sqlx.Tx, username string, tags []str
 	return err
 }
 
-// technologiesテーブルを更新する。
+// toolsテーブルを更新する。
 func (r *repositoryImpl) updateUserTechnologies(tx *sqlx.Tx, username string, techs []string) error {
-	if _, err := tx.Exec(`DELETE FROM technologies WHERE username = ?`, username); err != nil {
+	if _, err := tx.Exec(`DELETE FROM tools WHERE username = ?`, username); err != nil {
 		return err
 	}
 	if len(techs) == 0 {
@@ -196,7 +190,7 @@ func (r *repositoryImpl) updateUserTechnologies(tx *sqlx.Tx, username string, te
 		valueArgs = append(valueArgs, username, tech)
 	}
 
-	query := `INSERT INTO technologies (username, name) VALUES ` + strings.Join(valueStrings, ",")
+	query := `INSERT INTO tools (username, name) VALUES ` + strings.Join(valueStrings, ",")
 
 	_, err := tx.Exec(query, valueArgs...)
 	return err
@@ -231,4 +225,14 @@ func toNullString(opt optional.Option[string]) sql.NullString {
 	return sql.NullString{
 		Valid: false,
 	}
+}
+
+func toNullTopic(opt optional.Option[domain.TopicAndValue]) (sql.NullString, sql.NullString) {
+	if opt.IsSome() {
+		topicAndValue := opt.Unwrap()
+		return sql.NullString{String: topicAndValue.Topic, Valid: true},
+			sql.NullString{String: topicAndValue.Value, Valid: true}
+	}
+
+	return sql.NullString{Valid: false}, sql.NullString{Valid: false}
 }

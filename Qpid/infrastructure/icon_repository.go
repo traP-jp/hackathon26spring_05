@@ -14,7 +14,32 @@ type iconRow struct {
 
 // アイコン画像を保存する。
 func (r *repositoryImpl) SaveIcon(username string, icon domain.Icon) error {
-	return nil
+	var count int
+
+	//ユーザーが存在するかを確認
+	err := r.db.Get(
+		&count,
+		`SELECT COUNT(*) FROM users WHERE username = ?`,
+		username,
+	)
+	if err != nil {
+		return err
+	}
+	if count == 0 {
+		return errors.New("user not found")
+	}
+
+	_, err = r.db.Exec(
+		`INSERT INTO icons (username, icon, mime_type)
+		 VALUES (?, ?, ?)
+		 ON DUPLICATE KEY UPDATE
+			icon = VALUES(icon),
+			mime_type = VALUES(mime_type)`,
+		username,
+		icon.Blob,
+		icon.MimeType,
+	)
+	return err
 }
 
 // アイコン画像を取得する。
@@ -41,5 +66,9 @@ func (r *repositoryImpl) FindIconByUsername(username string) (*domain.Icon, erro
 
 // アイコン画像を削除する。
 func (r *repositoryImpl) DeleteIcon(username string) error {
-	return nil
+	_, err := r.db.Exec(
+		"DELETE FROM icons WHERE username = ?",
+		username,
+	)
+	return err
 }

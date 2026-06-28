@@ -2,13 +2,15 @@ import { createRouter, createWebHistory } from 'vue-router'
 
 import Myself from '../components/Myself.vue'
 import Likes from '../components/Likes.vue'
-import Matching_Base from '@/components/Matching_Base.vue'
+import Matching_Base from '../components/Matching_Base.vue'
+import Login from '../components/Login.vue'
 
 
 const routes = [
   { path: '/', component: Matching_Base },
   { path: '/me', component: Myself },
-  { path: '/likes', component: Likes}
+  { path: '/likes', component: Likes},
+  { path: '/login', component: Login}
 
 ]
 
@@ -16,5 +18,30 @@ const router = createRouter({
   history: createWebHistory(),
   routes: routes as any
 })
+
+// router.beforeEach(async (to, from, next) => {
+//   if (to.path === '/login') {
+//     next();
+//     return;
+//   }
+
+//   try {
+//     //const response = await fetch('https://qpid.trap.show/api/me');
+//     const response = await fetch('/api/me');
+//     if (response.status === 500) {
+//       next('/login');
+//       const errorText = await response.text();
+//       console.log("Unauthenticated:",errorText)
+//     } else {
+//       next();
+//       const errorText = await response.text();
+//       console.log("Authenticated:",errorText)
+//     }
+//   } catch (error) {
+//     next('/login');
+//     console.log("Authentication Error! :",error)
+//     //next();
+//   }
+// });
 
 export default router

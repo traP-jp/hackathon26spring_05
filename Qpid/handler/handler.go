@@ -5,6 +5,7 @@ import (
 	"context"
 	"log/slog"
 	"os"
+	"sync"
 
 	"github.com/gorilla/sessions"
 	"github.com/labstack/echo/v5"
@@ -22,6 +23,7 @@ type handler struct {
 	repository repository.Repository
 	sessions   sessions.Store
 	traq       traqClientWithContext
+	traqUsers  sync.Map // username → traQ user
 }
 
 type traqClientWithContext struct {
@@ -38,17 +40,17 @@ func Serve() {
 		return
 	}
 
-	env := env.GetEnv()
+	cfg := env.GetEnv()
 
 	var repo repository.Repository
-	if env.IsProduction() {
+	if cfg.IsProduction() {
 		repo = infrastructure.NewRepository(db)
 	} else {
 		repo = mock.NewMockRepository()
 	}
 
 	h := &handler{
-		env:        env,
+		env:        cfg,
 		repository: repo,
 		sessions: sessions.NewCookieStore([]byte(
 			cmp.Or(os.Getenv("SESSION_SECRET"), "secret"),
@@ -58,9 +60,7 @@ func Serve() {
 
 	if h.env.TraqAccessToken != "" {
 		h.traq = traqClientWithContext{
-			client: traq.NewAPIClient(&traq.Configuration{
-				Host: h.env.TraqHost,
-			}),
+			client:  newTraqAPIClient(h.env.TraqHost),
 			context: context.WithValue(context.Background(), traq.ContextAccessToken, h.env.TraqAccessToken),
 		}
 	} else {
@@ -82,7 +82,7 @@ func (h *handler) mapRoutes(e *echo.Echo) {
 		api.POST("/signup", h.signup)
 
 		// 認証が必要な API 群
-		authenticated := api.Group("", middleware.AuthenticationMiddleware(h.repository))
+		authenticated := api.Group("", middleware.AuthenticationMiddleware(h.repository, h.getUserUUID))
 		{
 			me := authenticated.Group("/me")
 			{

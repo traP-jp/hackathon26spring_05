@@ -21,16 +21,37 @@ const likedByUsers = ref<UserSummary[]>([])
 onMounted(async () => {
   try {
     // 1. LIKEした人をバックエンドから取得
-    const resLikes = await fetch('http://localhost:8080/api/me/likes')
+    const resLikes = await fetch(`/api/me/likes`,{
+      method: "GET",
+      headers:{
+        "content-type":"application/json"
+      },
+    });
     if (resLikes.ok) {
       likedUsers.value = await resLikes.json()
     }
+    else{
+      const errorText = await resLikes.text();
+      console.log("バックエンドから返ってきた生の文字:", errorText);
+    }
+
 
     // 2. 自分をLIKEした人をバックエンドから取得
-    const resLikedBy = await fetch('http://localhost:8080/api/me/liked-by')
+    const resLikedBy = await fetch(`/api/me/liked-by`,{
+      method: "GET",
+      headers:{
+        "content-type":"application/json"
+      },
+    });
     if (resLikedBy.ok) {
       likedByUsers.value = await resLikedBy.json()
     }
+    else{
+      const errorText = await resLikedBy.text();
+      console.log("バックエンドから返ってきた生の文字:", errorText);
+    }
+
+    
 
   } catch (error) {
     console.error('APIの取得に失敗しました。サーバーが起動していないか、ログインしていない可能性があります:', error)

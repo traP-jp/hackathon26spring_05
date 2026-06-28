@@ -12,6 +12,7 @@ import (
 // domain.User の定義に沿った、最終的なJSONレスポンスの型
 type userResponse struct {
 	Username      string                                 `json:"username"`
+	DisplayName   string                                 `json:"displayName"`
 	HasIcon       bool                                   `json:"hasIcon"`
 	Major         optional.Option[string]                `json:"major"`
 	Affiliations  []domain.UserAffiliation               `json:"affiliations"`
@@ -51,6 +52,30 @@ func (h *handler) getUser(c *echo.Context) error {
 		return notFound(c)
 	}
 
+	uuid, err := h.getUserUUID(userID)
+	if err != nil {
+		c.Logger().Warn("failed to get traQ UUID, affiliations will be empty",
+			slog.String("username", userID),
+			slog.Any("error", err),
+		)
+	}
+	if uuid != "" {
+		user.Affiliations = h.fetchAffiliations(c, uuid)
+	} else {
+		user.Affiliations = []domain.UserAffiliation{}
+	}
+
+	displayName, err := h.fetchUserDisplayName(userID)
+	if err != nil || displayName == nil {
+		c.Logger().Error(
+			"failed to fetch user display name",
+			slog.String("username", userID),
+			slog.Any("error", err),
+		)
+		return c.JSON(http.StatusInternalServerError, errorResponse{Message: "failed to fetch user display name"})
+	}
+	user.DisplayName = *displayName
+
 	// ④ ドメインモデルを UserResponse に詰め替えてステータス200で返却
 	return c.JSON(http.StatusOK, toUserResponse(*user))
 }
@@ -59,6 +84,7 @@ func (h *handler) getUser(c *echo.Context) error {
 func toUserResponse(user domain.User) userResponse {
 	return userResponse{
 		Username:      user.Username,
+		DisplayName:   user.DisplayName,
 		HasIcon:       user.HasIcon,
 		Major:         user.Major,
 		Affiliations:  user.Affiliations,
@@ -80,4 +106,12 @@ func toTopicAndValueResponse(topicAndValue optional.Option[domain.TopicAndValue]
 		Topic: topicAndValueValue.Topic,
 		Value: topicAndValueValue.Value,
 	})
+}
+
+func (h *handler) fetchUserDisplayName(username string) (*string, error) {
+	user, err := h.findTraqUserByUsername(username)
+	if err != nil || user == nil {
+		return nil, err
+	}
+	return &user.DisplayName, nil
 }
