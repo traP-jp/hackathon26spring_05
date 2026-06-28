@@ -2,22 +2,31 @@ package handler
 
 import (
 	"cmp"
+	"context"
+	"log/slog"
 	"os"
 
 	"github.com/gorilla/sessions"
-	"github.com/labstack/echo/v4"
-	echoMiddleware "github.com/labstack/echo/v4/middleware"
+	"github.com/labstack/echo/v5"
+	echoMiddleware "github.com/labstack/echo/v5/middleware"
 	"github.com/traP-jp/hackathon26spring_05/Qpid/env"
 	"github.com/traP-jp/hackathon26spring_05/Qpid/handler/middleware"
 	"github.com/traP-jp/hackathon26spring_05/Qpid/infrastructure"
 	"github.com/traP-jp/hackathon26spring_05/Qpid/repository"
 	"github.com/traP-jp/hackathon26spring_05/Qpid/repository/mock"
+	"github.com/traPtitech/go-traq"
 )
 
 type handler struct {
 	env        env.Env
 	repository repository.Repository
 	sessions   sessions.Store
+	traq       traqClientWithContext
+}
+
+type traqClientWithContext struct {
+	client  *traq.APIClient
+	context context.Context
 }
 
 func Serve() {
@@ -25,7 +34,7 @@ func Serve() {
 
 	_, err := infrastructure.NewDB()
 	if err != nil {
-		e.Logger.Fatal(err)
+		e.Logger.Error("Failed to connect to the database", slog.Any("error", err))
 		return
 	}
 	repo := mock.NewMockRepository()
@@ -36,10 +45,24 @@ func Serve() {
 		sessions: sessions.NewCookieStore([]byte(
 			cmp.Or(os.Getenv("SESSION_SECRET"), "secret"),
 		)),
+		traq: traqClientWithContext{},
+	}
+
+	if h.env.TraqAccessToken != "" {
+		h.traq = traqClientWithContext{
+			client: traq.NewAPIClient(&traq.Configuration{
+				Host: h.env.TraqHost,
+			}),
+			context: context.WithValue(context.Background(), traq.ContextAccessToken, h.env.TraqAccessToken),
+		}
+	} else {
+		e.Logger.Warn("traQ access token is not set. traQ API will not be available.")
 	}
 
 	h.mapRoutes(e)
-	e.Logger.Fatal(e.Start(":8080"))
+	if err := e.Start(":8080"); err != nil {
+		e.Logger.Error("Error occurred", slog.Any("error", err))
+	}
 }
 
 func (h *handler) mapRoutes(e *echo.Echo) {
