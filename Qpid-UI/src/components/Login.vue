@@ -6,7 +6,9 @@
         <h1>Qpid</h1>
       </div>
       
-      <button class="start-button" @click="handleLogin">Start</button>
+      <button class="start-button" :disabled="isSubmitting" @click="handleLogin">
+        {{ isSubmitting ? 'Starting...' : 'Start' }}
+      </button>
       
       <p class="terms">
         上のボタンを押すと利用規約に同意したものとみなします
@@ -15,10 +17,20 @@
   </div>
 </template>
 
-<script setup>
-const handleLogin = async() => {
-   try{
-    //const response = await fetch(`https://qpid.trap.show/api/me`,{
+<script setup lang="ts">
+import { ref } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
+import { toast } from 'vue3-toastify'
+
+const route = useRoute()
+const router = useRouter()
+const isSubmitting = ref(false)
+
+const handleLogin = async () => {
+  if (isSubmitting.value) return
+
+  isSubmitting.value = true
+  try {
     const response = await fetch(`/api/signup`,{
       method: "POST",
       headers:{
@@ -29,16 +41,21 @@ const handleLogin = async() => {
 
     if(!response.ok){
       console.log("Error : Not OK")
+      const errorText = await response.text()
+      console.log("バックエンドから返ってきた生の文字:", errorText)
+      toast.error("登録に失敗しました")
+      return
     }
-    // const errorText = await response.text();
-    // console.log("バックエンドから返ってきた生の文字:", errorText);
+
     const userData = await response.json();
     console.log("APIから取得したデータ:", userData)
-    window.location.href = "/";
+    await router.push((route.query.redirect as string | undefined) ?? '/')
     
   }catch(error){
     console.log("Error : ",error)
     toast.error("通信エラーが発生しました")
+  } finally {
+    isSubmitting.value = false
   }
 };
 </script>

@@ -3,63 +3,25 @@ import { ref, onMounted, onUnmounted } from 'vue'
 import { toast } from 'vue3-toastify';
 import 'vue3-toastify/dist/index.css';
 
-// 1. ダミーのユーザーデータ（バックエンドと接続するまでの繋ぎ）
 interface UserProfile {
   username: string
-  displayname: string
+  displayName: string
   affiliations:string[]
-  major: string
-  hometown: string
-  favoriteTopic:{
+  major: string | null
+  hometown: string | null
+  favoriteTopic: {
     topic:string,
     value:string
-  }
-  dislikedTopic:{
+  } | null
+  dislikedTopic: {
     topic:string,
     value:string
-  }
+  } | null
   technologies: string[] 
   tags: string[]         
-  status: string
-  bio: string
+  status?: string | null
+  bio: string | null
 }
-
-const dummyUsers: UserProfile[] = [
-  {
-    username: 'n3',
-    displayname: 'εИ',
-    affiliations: ['algo','game', 'sysad'],
-    major: '情報理工学院 情報工学系 B2',
-    hometown: '高知県',
-    favoriteTopic:{
-      topic:'もの',
-      value:'genMira'
-    },
-    dislikedTopic:{
-      topic:'もの',
-      value:'Unity'
-    },
-    technologies: ['Python'],
-    tags: ['勉学','くねくね','料理'],
-    status: 'オートマトン大好き',
-    bio: 'Pythonはいいぞ！\n最近サウンドを始めました'
-  },
-  // {
-  //   id: "Suima",
-  //   name: '睡魔',
-  //   department: 'all',
-  //   faculty: '生命理工学院 B2',
-  //   origin: '東京都',
-  //   like_category: '飲み物',
-  //   like_thing: 'Monster',
-  //   dislike_category: '言葉',
-  //   dislike_thing: 'およー',
-  //   tool: 'Tex',
-  //   hobby: 'Tex,',
-  //   status: 'TeXおじさん',
-  //   bio: 'TeXをやりましょう'
-  // }
-]
 
 const currentUserIndex = ref(0)
 const currentUser = ref<UserProfile | null>(null)
@@ -81,7 +43,7 @@ const handleAction = async(action: 'Like' | 'Nope') => {
   //toast.success(`${currentUser.value?.name} さんに 【${action}】 をしました！`)
   if (!currentUser.value) return;
   await sendAction(action, currentUser.value.username);
-  notify(currentUser.value?.displayname,action);
+  notify(currentUser.value?.displayName,action);
 
   
   // 次のユーザーへ（データがなくなったらnull）
@@ -146,9 +108,9 @@ const getReccomend = async() =>{
       console.log("Error : Not OK")
       const errorText = await response.text();
       console.log("バックエンドから返ってきた生の文字:", errorText);
+      return
     }
-    // const errorText = await response.text();
-    // console.log("バックエンドから返ってきた生の文字:", errorText);
+
     const suggestions = await response.json();    
     console.log("[getReccomend]APIから取得したデータ:", suggestions)
     await getReccomendUser(suggestions.map((s: any) => s.username));
@@ -170,7 +132,7 @@ const getReccomendUser = async (userIDs: Array<string>) => {
     const results = await Promise.all(userPromises);
     
     // 取得できたユーザーのみを格納 (nullを除外)
-    users.value = results.filter((u) => u !== null);
+    users.value = results.filter((u): u is UserProfile => u !== null);
     
     console.log("[getReccomend]ユーザー取得成功")
     // 最初のユーザーをセット
@@ -178,6 +140,8 @@ const getReccomendUser = async (userIDs: Array<string>) => {
       currentUser.value = users.value[0]??null;
       currentUserIndex.value = 0;
       console.log("[getReccomend]user info",users.value[0])
+    } else {
+      currentUser.value = null;
     }
   } catch (error) {
     console.error("ユーザー詳細取得エラー:", error);
@@ -214,9 +178,7 @@ const sendAction = async (action: 'Like' | 'Nope', username: string) => {
 onMounted(() => {
   window.addEventListener('keydown', handleKeyDown)
   console.log("Matching Start...")
-  // getReccomend()
-  users.value=dummyUsers
-  currentUser.value = dummyUsers[0] ?? null
+  getReccomend()
   }
 )
 onUnmounted(() => {
@@ -268,7 +230,7 @@ onUnmounted(() => {
         <div class="avatar-box">
           <img :src="`https://q.trap.jp/api/v3/public/icon/${currentUser.username}`" alt="avatar" class="avatar-img" draggable="false" />
         </div>
-        <div class="user-name">{{ currentUser.displayname }} (@{{currentUser.username}})</div>
+        <div class="user-name">{{ currentUser.displayName }} (@{{currentUser.username}})</div>
       </div>
 
       <div class="absolute-item pos-tool">
