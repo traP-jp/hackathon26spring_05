@@ -26,14 +26,18 @@ router.beforeEach(async (to, from, next) => {
   }
 
   try {
-    const response = await fetch('https://qpid.trap.show/api/me');
+    //const response = await fetch('https://qpid.trap.show/api/me');
+    const response = await fetch('/api/me');
     if (response.status === 401) {
       next('/login');
+      console.log("Unauthenticated")
     } else {
       next();
+      console.log("Authenticated")
     }
   } catch (error) {
     next('/login');
+    console.log("Authentication Error! :",error)
     //next();
   }
 });
