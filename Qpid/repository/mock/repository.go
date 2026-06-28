@@ -1,6 +1,8 @@
 package mock
 
 import (
+	"math/rand"
+
 	"github.com/moznion/go-optional"
 	"github.com/traP-jp/hackathon26spring_05/Qpid/domain"
 	"github.com/traP-jp/hackathon26spring_05/Qpid/repository"
@@ -63,9 +65,35 @@ func (r *MockRepository) IsActionExists(fromUsername, toUsername string) (bool, 
 
 // おすすめユーザーを取得する。
 func (r *MockRepository) ListSuggestions(username string, limit int) ([]domain.Suggestion, error) {
-	return []domain.Suggestion{{Username: "suggested-user", Similarity: 0.5}}, nil
-}
+	users := []domain.Suggestion{
+		{Username: "alice", Similarity: 0.91},
+		{Username: "bob", Similarity: 0.84},
+		{Username: "charlie", Similarity: 0.78},
+		{Username: "diana", Similarity: 0.72},
+		{Username: "eric", Similarity: 0.66},
+	}
 
+	filtered := make([]domain.Suggestion, 0, len(users))
+	for _, user := range users {
+		if user.Username != username {
+			filtered = append(filtered, user)
+		}
+	}
+
+	if limit <= 0 {
+		return []domain.Suggestion{}, nil
+	}
+
+	rand.Shuffle(len(filtered), func(i, j int) {
+		filtered[i], filtered[j] = filtered[j], filtered[i]
+	})
+
+	if limit > len(filtered) {
+		limit = len(filtered)
+	}
+
+	return filtered[:limit], nil
+}
 // 類似度を保存する。
 func (r *MockRepository) UpsertSimilarity(usernameA, usernameB string, similarity float64) error {
 	return nil
