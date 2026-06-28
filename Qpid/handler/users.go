@@ -31,7 +31,10 @@ type topicAndValueResponse struct {
 // GET /api/users/:id
 func (h *handler) getUser(c *echo.Context) error {
 	// ② パスパラメータから「id」を取得
-	userID := c.Param("id")
+	userID, err := echo.PathParam[string](c, "id")
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, errorResponse{Message: "invalid path parameter"})
+	}
 
 	// ③ データベース等からユーザーを取得
 	user, err := h.repository.FindUserByUsername(userID)
