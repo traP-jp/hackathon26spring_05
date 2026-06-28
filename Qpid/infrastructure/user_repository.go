@@ -11,16 +11,16 @@ import (
 )
 
 type User struct {
-	Username       string         `db:"username"`
-	CreatedAt      sql.NullTime   `db:"created_at"`
-	Major          sql.NullString `db:"major"`
-	Hometown       sql.NullString `db:"hometown"`
-	LikeTopic      sql.NullString `db:"like_topic"`
-	LikeValue      sql.NullString `db:"like_value"`
-	DislikeTopic   sql.NullString `db:"dislike_topic"`
-	DislikeValue   sql.NullString `db:"dislike_value"`
-	UsualSituation sql.NullString `db:"usual_situation"`
-	Bio            sql.NullString `db:"bio"`
+	username       string         `db:"username"`
+	createdAt      sql.NullTime   `db:"created_at"`
+	major          sql.NullString `db:"major"`
+	hometown       sql.NullString `db:"hometown"`
+	likeTopic      sql.NullString `db:"like_topic"`
+	likeValue      sql.NullString `db:"like_value"`
+	dislikeTopic   sql.NullString `db:"dislike_topic"`
+	dislikeValue   sql.NullString `db:"dislike_value"`
+	usualSituation sql.NullString `db:"usual_situation"`
+	bio            sql.NullString `db:"bio"`
 }
 
 // ユーザーを作成する。
@@ -65,12 +65,12 @@ func (r *repositoryImpl) FindUserByUsername(username string) (*domain.User, erro
 	}
 
 	user := &domain.User{
-		Username:      row.Username,
-		Major:         convertNullString(row.Major),
-		Hometown:      convertNullString(row.Hometown),
-		Bio:           convertNullString(row.Bio),
-		FavoriteTopic: convertTopic(row.LikeTopic, row.LikeValue),
-		DislikedTopic: convertTopic(row.DislikeTopic, row.DislikeValue),
+		Username:      row.username,
+		Major:         convertNullString(row.major),
+		Hometown:      convertNullString(row.hometown),
+		Bio:           convertNullString(row.bio),
+		FavoriteTopic: convertTopic(row.likeTopic, row.likeValue),
+		DislikedTopic: convertTopic(row.dislikeTopic, row.dislikeValue),
 		Tags:          tags,
 		Technologies:  tools,
 		Affiliations:  []domain.UserAffiliation{},
@@ -117,13 +117,16 @@ func (r *repositoryImpl) UpdateUser(username string, user domain.User) error {
 	}
 	defer tx.Rollback()
 
-	query := `
-		UPDATE users 
-		SET major = ?, hometown = ?, like_topic = ?, like_value = ?, 
-		    dislike_topic = ?, dislike_value = ?, bio = ?
-		WHERE username = ?`
+	if _,err :=tx.Exec(`DELETE FROM users WHERE username = ?`,username);err !=nil{
+		return err
+	}
 
-	_, err = tx.Exec(query, major, hometown, likeTopic, likeValue, dislikeTopic, dislikeValue, bio, username)
+	query := `
+		INSERT INTO users 
+		(username, major, hometown, like_topic, like_value, dislike_topic, dislike_value, bio)
+		VALUES(?,?,?,?,?,?,?,?)`
+
+	_, err = tx.Exec(query, username, major, hometown, likeTopic, likeValue, dislikeTopic, dislikeValue, bio)
 	if err != nil {
 		return err
 	}
@@ -136,7 +139,7 @@ func (r *repositoryImpl) UpdateUser(username string, user domain.User) error {
 		return err
 	}
 
-	return nil
+	return tx.Commit()
 }
 
 // ユーザーの存在を確認する。
@@ -172,7 +175,7 @@ func (r *repositoryImpl) updateUserTags(tx *sqlx.Tx, username string, tags []str
 
 	query := `INSERT INTO tags (username, name) VALUES ` + strings.Join(valueStrings, ",")
 
-	// 3. 一括実行
+	// 一括実行
 	_, err := tx.Exec(query, valueArgs...)
 	return err
 }
