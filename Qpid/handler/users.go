@@ -51,7 +51,19 @@ func (h *handler) getUser(c *echo.Context) error {
 		return notFound(c)
 	}
 
-	// ④ ドメインモデルを UserResponse に詰め替えてステータス200で返却
+	uuid, err := h.getUserUUID(userID)
+	if err != nil {
+		c.Logger().Warn("failed to get traQ UUID, affiliations will be empty",
+			slog.String("username", userID),
+			slog.Any("error", err),
+		)
+	}
+	if uuid != "" {
+		user.Affiliations = h.fetchAffiliations(c, uuid)
+	} else {
+		user.Affiliations = []domain.UserAffiliation{}
+	}
+
 	return c.JSON(http.StatusOK, toUserResponse(*user))
 }
 
