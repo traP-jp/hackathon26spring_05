@@ -32,15 +32,23 @@ type traqClientWithContext struct {
 func Serve() {
 	e := echo.New()
 
-	_, err := infrastructure.NewDB()
+	db, err := infrastructure.NewDB()
 	if err != nil {
 		e.Logger.Error("Failed to connect to the database", slog.Any("error", err))
 		return
 	}
-	repo := mock.NewMockRepository()
+
+	env := env.GetEnv()
+
+	var repo repository.Repository
+	if env.IsProduction() {
+		repo = infrastructure.NewRepository(db)
+	} else {
+		repo = mock.NewMockRepository()
+	}
 
 	h := &handler{
-		env:        env.GetEnv(),
+		env:        env,
 		repository: repo,
 		sessions: sessions.NewCookieStore([]byte(
 			cmp.Or(os.Getenv("SESSION_SECRET"), "secret"),
