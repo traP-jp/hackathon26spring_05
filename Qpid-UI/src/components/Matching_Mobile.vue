@@ -1,28 +1,28 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import { toast } from 'vue3-toastify';
 import 'vue3-toastify/dist/index.css';
 
-// 1. ダミーのユーザーデータ（バックエンドと接続するまでの繋ぎ）
+// 1. ダミーのユーザーデータ
 interface UserProfile {
-  username: string       // DBの PRIMARY KEY
-  name: string           // 班の人が残してほしいと言っていたサークルの人の名前
-  major: string          // 学部/系
-  hometown: string       // 出身
-  like_topic: string     // 好きな〇〇（カテゴリ名）
-  like_value: string     // 好きなものの具体的な値
-  dislike_topic: string  // 嫌いな〇〇（カテゴリ名）
-  dislike_value: string  // 嫌いなものの具体的な値
-  tool: string           // 好きな創作ツール
-  usual_situation: string // 普段の様子
-  bio: string            // 自由記述欄
-  tags?: string[]        // DBのtagsテーブルから取得する想定の趣味タグ
+  username: string
+  name: string
+  major: string
+  hometown: string
+  like_topic: string
+  like_value: string
+  dislike_topic: string
+  dislike_value: string
+  tool: string
+  usual_situation: string
+  bio: string
+  tags?: string[]
 }
 
 const dummyUsers: UserProfile[] = [
   {
     username: 'n3',
-    name: 'εИ',          // name が復活しました！
+    name: 'εИ',
     major: '情報理工学院 情報工学系 B2',
     hometown: '高知県',
     like_topic: '食べ物',
@@ -36,7 +36,7 @@ const dummyUsers: UserProfile[] = [
   },
   {
     username: 'Suima',
-    name: '睡麻',        // name が復活しました！
+    name: '睡麻',
     major: '生命理工学院 B2',
     hometown: '東京都',
     like_topic: '飲み物',
@@ -52,10 +52,30 @@ const dummyUsers: UserProfile[] = [
 
 const currentUserIndex = ref(0)
 const currentUser = ref<UserProfile | null | undefined>(dummyUsers[0])
+
 // 2. ジェスチャー・操作の管理用変数
 let startX = 0
 let isDragging = false
-const swipeOffset = ref(0) // 視覚的なアニメーション用
+const swipeOffset = ref(0)
+
+// 不透明度の最大値
+const MAX_OPACITY = 0.8;
+// 不透明度が最大になるスワイプ量 (px)
+const OPACITY_THRESHOLD = 150; 
+
+// スワイプ量（swipeOffset）から、Like/Nopeそれぞれの奥のレイヤーの不透明度を計算
+const swipeOpacity = computed(() => {
+  const offset = swipeOffset.value;
+  const ratio = Math.min(Math.abs(offset) / OPACITY_THRESHOLD, 1);
+  const opacity = ratio * MAX_OPACITY;
+
+  return {
+    // 右にスワイプ（プラス）した時はLIKE（赤いハート）を明るく
+    like: offset > 0 ? opacity : 0,
+    // 左にスワイプ（マイナス）した時はNOPE（青いハート）を明るく
+    nope: offset < 0 ? opacity : 0
+  };
+});
 
 const notify = (name: string|undefined, action: string) => {
   toast(`${name} さんに 【${action}】 をしました！`, {
@@ -64,13 +84,10 @@ const notify = (name: string|undefined, action: string) => {
   });
 }
 
-// アクション処理（バックエンドにデータを送る場合はここで行う）
+// アクション処理
 const handleAction = (action: 'Like' | 'Nope') => {
-  //toast.success(`${currentUser.value?.name} さんに 【${action}】 をしました！`)
-  notify(currentUser.value?.name, action); // 元通り name で通知されるように戻しました
-
+  notify(currentUser.value?.name, action);
   
-  // 次のユーザーへ（データがなくなったらnull）
   currentUserIndex.value++
   if (currentUserIndex.value < dummyUsers.length) {
     currentUser.value = dummyUsers[currentUserIndex.value]|| null
@@ -80,9 +97,6 @@ const handleAction = (action: 'Like' | 'Nope') => {
   swipeOffset.value = 0
 }
 
-// 3. マウス・スマホのドラッグ/スワイプイベントハンドラ
-// ユーザーのご指定（右スワイプ/右矢印 = Like、左スワイプ/左矢印 = Nope）で判定します
-// 1. 各イベントの型を明示的に指定（Vue 3 / TypeScript環境）
 const touchStart = (e: any) => {
   isDragging = true
   startX = e.touches ? e.touches[0].clientX : e.clientX
@@ -100,36 +114,12 @@ const touchEnd = () => {
 
   const threshold = 80 
   if (swipeOffset.value > threshold) {
-    handleAction('Like') // 右に大きくスワイプ
+    handleAction('Like') // 右スワイプ
   } else if (swipeOffset.value < -threshold) {
-    handleAction('Nope') // 左に大きくスワイプ
+    handleAction('Nope') // 左スワイプ
   } else {
-    swipeOffset.value = 0 // しきい値を超えなければ中央に戻す
+    swipeOffset.value = 0
   }
-}
-
-const getReccomend = async() =>{
-  try{
-    //const response = await fetch(`https://qpid.trap.show/api/me`,{
-    const response = await fetch(`/api/suggestions`,{
-      method: "GET",
-      headers:{
-        "content-type":"application/json"
-      },
-    });
-
-    if(!response.ok){
-      console.log("Error : Not OK")
-    }
-    // const errorText = await response.text();
-    // console.log("バックエンドから返ってきた生の文字:", errorText);
-    const userData = await response.json();
-    console.log("APIから取得したデータ:", userData)
-    
-  }catch(error){
-    console.log("Error : ",error)
-    toast.error("通信エラーが発生しました")
-}
 }
 </script>
 
@@ -144,6 +134,22 @@ const getReccomend = async() =>{
     @touchmove="touchMove"
     @touchend="touchEnd"
   >
+
+    <div 
+      class="swipe-overlay-layer"
+      :style="{ transition: isDragging ? 'none' : 'opacity 0.3s ease' }"
+    >
+      <div 
+        class="overlay-nope"
+        :style="{ opacity: swipeOpacity.nope }"
+      ></div>
+
+      <div 
+        class="overlay-like"
+        :style="{ opacity: swipeOpacity.like }"
+      ></div>
+    </div>
+
     <div 
       v-if="currentUser" 
       class="mobile-card-container"
@@ -221,34 +227,73 @@ const getReccomend = async() =>{
 <style scoped>
 .matching-mobile-screen {
   width: 100%;
-  height: calc(100vh - 60px); /* 100vhに固定してヘッダーを動かさないように指定 */
+  height: calc(100vh - 60px);
   display: flex;
   justify-content: center;
   align-items: center;
-  padding: 0; /* 左右の余白をなくしてスライド全面に広げる */
+  padding: 0;
   background-color: #f8f9fa;
   box-sizing: border-box;
   user-select: none;
   overflow: hidden;
-  /* 画面全体のどこを掴んでもドラッグできるようにカーソルを「掴む」マークに */
   cursor: grab;
+  position: relative;
 }
 
 .matching-mobile-screen:active {
   cursor: grabbing;
 }
 
+/* 奥のレイヤー全体のスタイル */
+.swipe-overlay-layer {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 0;
+  pointer-events: none;
+}
+
+/* 背面全体を覆う設定 */
+.overlay-nope,
+.overlay-like {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0; 
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: 80% auto; /* 画面全体の縦横比に合わせて自動フィット */
+}
+
+/* NOPE（左側スワイプ：背面全体に青いハートをインラインSVGデータで描画） */
+.overlay-nope {
+  background-color: rgba(30, 136, 229, 0.05); /* ほんのり青い背景光 */
+  /* インラインSVGで巨大なハートを描画（外部ファイル不使用） */
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%231E88E5'><path d='M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.5 3 21.9 5.42 21.9 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z'/></svg>");
+}
+
+/* LIKE（右側スワイプ：背面全体に赤いハートをインラインSVGデータで描画） */
+.overlay-like {
+  background-color: rgba(255, 74, 125, 0.05); /* ほんのり赤い背景光 */
+  /* インラインSVGで巨大なハートを描画（外部ファイル不使用） */
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23FF4A7D'><path d='M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.5 3 21.9 5.42 21.9 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z'/></svg>");
+}
+
 .mobile-card-container {
   width: 100%;
-  height: 100%; /* 高さを100%にしてグレーの部分いっぱいに広げる */
+  height: 100%;
   background: #ffffff;
-  border: none; /* 外枠の線を削除 */
-  border-radius: 0; /* 角丸を削除して全画面表示に */
+  border: none;
+  border-radius: 0;
   position: relative;
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  /* カード単体の pointer-events を有効にし、中の個別スクロールを邪魔しないように調整 */
+  z-index: 1;
   pointer-events: auto;
 }
 
@@ -257,7 +302,7 @@ const getReccomend = async() =>{
   overflow-y: auto;
   padding: 20px;
   scrollbar-width: thin;
-  -webkit-overflow-scrolling: touch; /* スムーズなスクロールの有効化 */
+  -webkit-overflow-scrolling: touch;
 }
 
 .profile-main {
@@ -362,10 +407,9 @@ const getReccomend = async() =>{
   border: 1px solid #e9ecef;
   padding: 10px;
   border-radius: 8px;
-  font-size: 0.9rem; /* bio-text とサイズを揃えました */
-  /* font-style: italic; (削除しました) */
+  font-size: 0.9rem;
   margin-top: 6px;
-  color: #444; /* 文字色も bio-text と統一 */
+  color: #444;
   line-height: 1.4;
   box-sizing: border-box;
 }
@@ -373,7 +417,7 @@ const getReccomend = async() =>{
 .bio-text {
   width: 100%;
   white-space: pre-wrap;
-  word-break: break-all; /* 👈 英語の横突き抜け防止用にこれだけ足しました */
+  word-break: break-all;
   background: #f8f9fa;
   border: 1px solid #e9ecef;
   padding: 10px;
@@ -386,6 +430,7 @@ const getReccomend = async() =>{
 }
 
 .no-more-users {
+  z-index: 2;
   text-align: center;
   color: #666;
   padding: 20px;
