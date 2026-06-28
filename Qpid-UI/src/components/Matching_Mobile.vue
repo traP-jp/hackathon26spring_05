@@ -3,20 +3,20 @@ import { ref, computed } from 'vue'
 import { toast } from 'vue3-toastify';
 import 'vue3-toastify/dist/index.css';
 
-// 1. ダミーのユーザーデータ
+// 1. ダミーのユーザーデータ（バックエンドと接続するまでの繋ぎ）
 interface UserProfile {
-  username: string
-  name: string
-  major: string
-  hometown: string
-  like_topic: string
-  like_value: string
-  dislike_topic: string
-  dislike_value: string
-  tool: string
-  usual_situation: string
-  bio: string
-  tags?: string[]
+  username: string       // DBの PRIMARY KEY
+  name: string           // name
+  major: string          // 学部/系
+  hometown: string       // 出身
+  like_topic: string     // 好きな〇〇（カテゴリ名）
+  like_value: string     // 好きなものの具体的な値
+  dislike_topic: string  // 嫌いな〇〇（カテゴリ名）
+  dislike_value: string  // 嫌いなものの具体的な値
+  tool: string           // 好きな創作ツール
+  usual_situation: string // 普段の様子
+  bio: string            // 自由記述欄
+  tags?: string[]        // DBのtagsテーブルから取得する想定の趣味タグ
 }
 
 const dummyUsers: UserProfile[] = [
@@ -52,11 +52,10 @@ const dummyUsers: UserProfile[] = [
 
 const currentUserIndex = ref(0)
 const currentUser = ref<UserProfile | null | undefined>(dummyUsers[0])
-
 // 2. ジェスチャー・操作の管理用変数
 let startX = 0
 let isDragging = false
-const swipeOffset = ref(0)
+const swipeOffset = ref(0) // 視覚的なアニメーション用
 
 // 不透明度の最大値
 const MAX_OPACITY = 0.8;
@@ -70,9 +69,9 @@ const swipeOpacity = computed(() => {
   const opacity = ratio * MAX_OPACITY;
 
   return {
-    // 右にスワイプ（プラス）した時はLIKE（赤いハート）を明るく
+    // 右にスワイプ（プラス）した時はLIKE（赤いハート側）を明るく
     like: offset > 0 ? opacity : 0,
-    // 左にスワイプ（マイナス）した時はNOPE（青いハート）を明るく
+    // 左にスワイプ（マイナス）した時はNOPE（青いハート側）を明るく
     nope: offset < 0 ? opacity : 0
   };
 });
@@ -119,6 +118,27 @@ const touchEnd = () => {
     handleAction('Nope') // 左スワイプ
   } else {
     swipeOffset.value = 0
+  }
+}
+
+const getReccomend = async() =>{
+  try{
+    const response = await fetch(`/api/suggestions`,{
+      method: "GET",
+      headers:{
+        "content-type":"application/json"
+      },
+    });
+
+    if(!response.ok){
+      console.log("Error : Not OK")
+    }
+    const userData = await response.json();
+    console.log("APIから取得したデータ:", userData)
+    
+  }catch(error){
+    console.log("Error : ",error)
+    toast.error("通信エラーが発生しました")
   }
 }
 </script>
@@ -244,7 +264,7 @@ const touchEnd = () => {
   cursor: grabbing;
 }
 
-/* 奥のレイヤー全体のスタイル */
+/* ✨ 奥のレイヤー全体のスタイル ✨ */
 .swipe-overlay-layer {
   position: absolute;
   top: 0;
@@ -252,10 +272,11 @@ const touchEnd = () => {
   width: 100%;
   height: 100%;
   z-index: 0;
-  pointer-events: none;
+  pointer-events: none; /* ドラッグ操作を邪魔しない */
+  display: flex;
 }
 
-/* 背面全体を覆う設定 */
+/* 左右それぞれの画像表示エリアの共通設定 */
 .overlay-nope,
 .overlay-like {
   position: absolute;
@@ -266,20 +287,18 @@ const touchEnd = () => {
   opacity: 0; 
   background-repeat: no-repeat;
   background-position: center;
-  background-size: 80% auto; /* 画面全体の縦横比に合わせて自動フィット */
+  background-size: 80% auto; /* ハートを表示する後ろのレイヤー全体のサイズ調整 */
 }
 
-/* NOPE（左側スワイプ：背面全体に青いハートをインラインSVGデータで描画） */
+/* NOPE（左側：青いハート） */
 .overlay-nope {
-  background-color: rgba(30, 136, 229, 0.05); /* ほんのり青い背景光 */
-  /* インラインSVGで巨大なハートを描画（外部ファイル不使用） */
+  background-color: rgba(30, 136, 229, 0.08); /* ほんのり青背景 */
   background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%231E88E5'><path d='M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.5 3 21.9 5.42 21.9 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z'/></svg>");
 }
 
-/* LIKE（右側スワイプ：背面全体に赤いハートをインラインSVGデータで描画） */
+/* LIKE（右側：赤いハート） */
 .overlay-like {
-  background-color: rgba(255, 74, 125, 0.05); /* ほんのり赤い背景光 */
-  /* インラインSVGで巨大なハートを描画（外部ファイル不使用） */
+  background-color: rgba(255, 74, 125, 0.08); /* ほんのり赤背景 */
   background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23FF4A7D'><path d='M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.5 3 21.9 5.42 21.9 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z'/></svg>");
 }
 
@@ -293,7 +312,7 @@ const touchEnd = () => {
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  z-index: 1;
+  z-index: 1; /* 奥のレイヤーより手前に配置 */
   pointer-events: auto;
 }
 
