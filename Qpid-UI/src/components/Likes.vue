@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
+import { apiFetch } from '../api'
 
 // タブの切り替え状態を管理 ('liked' = Likeした人, 'likedBy' = Likeされた人)
 const activeTab = ref<'liked' | 'likedBy'>('liked')
@@ -21,7 +22,7 @@ const likedByUsers = ref<UserSummary[]>([])
 onMounted(async () => {
   try {
     // 1. LIKEした人をバックエンドから取得
-    const resLikes = await fetch(`/api/me/likes`,{
+    const resLikes = await apiFetch(`/api/me/likes`,{
       method: "GET",
       headers:{
         "content-type":"application/json"
@@ -37,7 +38,7 @@ onMounted(async () => {
 
 
     // 2. 自分をLIKEした人をバックエンドから取得
-    const resLikedBy = await fetch(`/api/me/liked-by`,{
+    const resLikedBy = await apiFetch(`/api/me/liked-by`,{
       method: "GET",
       headers:{
         "content-type":"application/json"
