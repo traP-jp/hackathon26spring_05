@@ -109,12 +109,23 @@ func (r *MockRepository) DeleteIcon(username string) error {
 func mockUser(username string) *domain.User {
 	return &domain.User{
 		Username:     username,
+		DisplayName:  "モックユーザー",
 		HasIcon:      false,
-		Major:        optional.None[string](),
-		Affiliations: []domain.UserAffiliation{domain.UserAffiliationSysAd},
-		Hometown:     optional.None[string](),
-		Tags:         []string{"go"},
-		Technologies: []string{},
-		Bio:          optional.Some("mock user"),
+		Major:        optional.Some("工学院 情報工学系"), // 値を入れたケース
+		Affiliations: []domain.UserAffiliation{domain.UserAffiliationAlgorithm, domain.UserAffiliationGame},
+		Hometown:     optional.Some("東京都"), // 値を入れたケース
+		Tags:         []string{"Go", "Vue.js", "traP"},
+		Technologies: []string{"Go", "TypeScript", "Docker"},
+		Bio:          optional.Some("This is mock user"),
+		//Status:       optional.Some("demo status"),
+		FavoriteTopic: optional.Some(domain.TopicAndValue{
+			Topic: "言語",
+			Value: "Go",
+		}),
+		DislikedTopic: optional.Some(domain.TopicAndValue{
+			Topic: "食べ物",
+			Value: "辛いもの",
+		}),
+		//DislikedTopic: optional.None[domain.TopicAndValue](), // Nullを許容するケース
 	}
 }

@@ -8,6 +8,7 @@ require (
 	github.com/jmoiron/sqlx v1.4.0
 	github.com/labstack/echo/v5 v5.2.1
 	github.com/moznion/go-optional v0.13.0
+	github.com/patrickmn/go-cache v2.1.0+incompatible
 	github.com/traPtitech/go-traq v0.0.0-20260603150909-e1835f95a651
 )
 

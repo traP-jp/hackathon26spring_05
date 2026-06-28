@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { toast } from 'vue3-toastify';
 import 'vue3-toastify/dist/index.css';
 
@@ -19,43 +19,34 @@ interface UserProfile {
   tags?: string[]        // DBのtagsテーブルから取得する想定の趣味タグ
 }
 
-const dummyUsers: UserProfile[] = [
-  {
-    username: 'n3',
-    name: 'εИ',          // name が復活しました！
-    major: '情報理工学院 情報工学系 B2',
-    hometown: '高知県',
-    like_topic: '食べ物',
-    like_value: 'ラーメン',
-    dislike_topic: '言語',
-    dislike_value: 'TEX',
-    tool: 'Python',
-    usual_situation: 'オートマトンおじさん',
-    bio: 'Pythonはいいぞ！\n最近サウンドを始めました',
-    tags: ['勉学', 'くねくね', '料理']
-  },
-  {
-    username: 'Suima',
-    name: '睡麻',        // name が復活しました！
-    major: '生命理工学院 B2',
-    hometown: '東京都',
-    like_topic: '飲み物',
-    like_value: 'Monster',
-    dislike_topic: '言葉',
-    dislike_value: 'およー',
-    tool: 'Tex',
-    usual_situation: 'TeXおじさん',
-    bio: 'TeXをやりましょう',
-    tags: ['Tex']
-  }
-]
+
 
 const currentUserIndex = ref(0)
-const currentUser = ref<UserProfile | null | undefined>(dummyUsers[0])
+const currentUser = ref<UserProfile | null>(null)
+const users = ref<UserProfile[]>([])
 // 2. ジェスチャー・操作の管理用変数
 let startX = 0
 let isDragging = false
 const swipeOffset = ref(0) // 視覚的なアニメーション用
+
+// 不透明度の最大値
+const MAX_OPACITY = 0.8;
+// 不透明度が最大になるスワイプ量 (px)
+const OPACITY_THRESHOLD = 150; 
+
+// スワイプ量（swipeOffset）から、Like/Nopeそれぞれの奥のレイヤーの不透明度を計算
+const swipeOpacity = computed(() => {
+  const offset = swipeOffset.value;
+  const ratio = Math.min(Math.abs(offset) / OPACITY_THRESHOLD, 1);
+  const opacity = ratio * MAX_OPACITY;
+
+  return {
+    // 右にスワイプ（プラス）した時はLIKE（赤いハート側）を明るく
+    like: offset > 0 ? opacity : 0,
+    // 左にスワイプ（マイナス）した時はNOPE（青いハート側）を明るく
+    nope: offset < 0 ? opacity : 0
+  };
+});
 
 const notify = (name: string|undefined, action: string) => {
   toast(`${name} さんに 【${action}】 をしました！`, {
@@ -64,26 +55,26 @@ const notify = (name: string|undefined, action: string) => {
   });
 }
 
-// アクション処理（バックエンドにデータを送る場合はここで行う）
+// アクション処理
 const handleAction = (action: 'Like' | 'Nope') => {
-  //toast.success(`${currentUser.value?.name} さんに 【${action}】 をしました！`)
-  notify(currentUser.value?.name, action); // 元通り name で通知されるように戻しました
-
+  notify(currentUser.value?.name, action);
   
-  // 次のユーザーへ（データがなくなったらnull）
   currentUserIndex.value++
-  if (currentUserIndex.value < dummyUsers.length) {
-    currentUser.value = dummyUsers[currentUserIndex.value]|| null
-  } else {
+  if (currentUserIndex.value < users.value.length) {
+    const nextUser = users.value[currentUserIndex.value];
+    currentUser.value = nextUser !== undefined ? nextUser : null;
+  }else {
     currentUser.value = null
   }
   swipeOffset.value = 0
 }
 
 // 3. マウス・スマホのドラッグ/スワイプイベントハンドラ
-// ユーザーのご指定（右スワイプ/右矢印 = Like、左スワイプ/左矢印 = Nope）で判定します
 // 1. 各イベントの型を明示的に指定（Vue 3 / TypeScript環境）
 const touchStart = (e: any) => {
+  // 表示するユーザーがもういない場合は、スワイプ操作を受け付けない
+  if (!currentUser.value) return
+
   isDragging = true
   startX = e.touches ? e.touches[0].clientX : e.clientX
 }
@@ -94,17 +85,28 @@ const touchMove = (e: any) => {
   swipeOffset.value = currentX - startX
 }
 
+// ユーザーのご指定（右スワイプ/右矢印 = Like、左スワイプ/左矢印 = Nope）で判定します
 const touchEnd = () => {
   if (!isDragging) return
   isDragging = false
 
   const threshold = 80 
   if (swipeOffset.value > threshold) {
-    handleAction('Like') // 右に大きくスワイプ
+    handleAction('Like') // 右スワイプ
   } else if (swipeOffset.value < -threshold) {
-    handleAction('Nope') // 左に大きくスワイプ
+    handleAction('Nope') // 左スワイプ
   } else {
-    swipeOffset.value = 0 // しきい値を超えなければ中央に戻す
+    swipeOffset.value = 0
+  }
+}
+
+// 4. PCのキーボード（矢印キー）イベントハンドラ
+const handleKeyDown = (e: KeyboardEvent) => {
+  if (!currentUser.value) return // ユーザーがいない場合は何もしない
+  if (e.key === 'ArrowRight') {
+    handleAction('Like')
+  } else if (e.key === 'ArrowLeft') {
+    handleAction('Nope')
   }
 }
 
@@ -120,17 +122,54 @@ const getReccomend = async() =>{
 
     if(!response.ok){
       console.log("Error : Not OK")
+      const errorText = await response.text();
+      console.log("バックエンドから返ってきた生の文字:", errorText);
     }
     // const errorText = await response.text();
     // console.log("バックエンドから返ってきた生の文字:", errorText);
-    const userData = await response.json();
-    console.log("APIから取得したデータ:", userData)
+    const suggestions = await response.json();    
+    console.log("[getReccomend]APIから取得したデータ:", suggestions)
+    await getReccomendUser(suggestions.map((s: any) => s.username));
     
   }catch(error){
     console.log("Error : ",error)
     toast.error("通信エラーが発生しました")
+  }
 }
-}
+
+const getReccomendUser = async (userIDs: Array<string>) => {
+  try {
+    const userPromises = userIDs.map(async (id) => {
+      const res = await fetch(`/api/users/${id}`);
+      if (!res.ok) return null;
+      return res.json();
+    });
+
+    const results = await Promise.all(userPromises);
+    
+    // 取得できたユーザーのみを格納 (nullを除外)
+    users.value = results.filter((u) => u !== null);
+    
+    // 最初のユーザーをセット
+    if (users.value.length > 0) {
+      currentUser.value = users.value[0]??null;
+      currentUserIndex.value = 0;
+    }
+    console.log("[getReccomend]ユーザー取得成功")
+  } catch (error) {
+    console.error("ユーザー詳細取得エラー:", error);
+  }
+};
+
+onMounted(() => {
+  window.addEventListener('keydown', handleKeyDown)
+  console.log("Matching Start...")
+  getReccomend()
+})
+
+onUnmounted(() => {
+  window.removeEventListener('keydown', handleKeyDown)
+})
 </script>
 
 <template>
@@ -144,7 +183,22 @@ const getReccomend = async() =>{
     @touchmove="touchMove"
     @touchend="touchEnd"
   >
-    <!-- 2. rotate を削除し、真横の平行移動（translateX）のみに変更 -->
+
+    <div 
+      class="swipe-overlay-layer"
+      :style="{ transition: isDragging ? 'none' : 'opacity 0.3s ease' }"
+    >
+      <div 
+        class="overlay-nope"
+        :style="{ opacity: swipeOpacity.nope }"
+      ></div>
+
+      <div 
+        class="overlay-like"
+        :style="{ opacity: swipeOpacity.like }"
+      ></div>
+    </div>
+
     <div 
       v-if="currentUser" 
       class="mobile-card-container"
@@ -183,7 +237,9 @@ const getReccomend = async() =>{
 
           <div v-if="currentUser.tags && currentUser.tags.length > 0" class="info-item">
             <span class="label">趣味タグ:</span> 
-            <span class="value tag-text">{{ currentUser.tags.join('、') }}</span>
+            <div class="tag-badges-container">
+              <span v-for="tag in currentUser.tags" :key="tag" class="value font-badge tool-badge">{{ tag }}</span>
+            </div>
           </div>
 
           <div class="info-item">
@@ -196,9 +252,9 @@ const getReccomend = async() =>{
             <span class="value">{{ currentUser.dislike_value }}</span>
           </div>
 
-          <div class="info-item">
+          <div class="info-item block-item">
             <span class="label">普段の様子:</span> 
-            <span class="value italic-text">“ {{ currentUser.usual_situation }} ”</span>
+            <p class="usual-text">{{ currentUser.usual_situation }}</p>
           </div>
 
           <div class="info-item block-item">
@@ -220,36 +276,72 @@ const getReccomend = async() =>{
 <style scoped>
 .matching-mobile-screen {
   width: 100%;
-  min-height: calc(100vh - 60px);
+  height: calc(100vh - 60px);
   display: flex;
   justify-content: center;
   align-items: center;
-  padding: 15px;
+  padding: 0;
   background-color: #f8f9fa;
   box-sizing: border-box;
   user-select: none;
   overflow: hidden;
-  /* 画面全体のどこを掴んでもドラッグできるようにカーソルを「掴む」マークに */
   cursor: grab;
+  position: relative;
 }
 
 .matching-mobile-screen:active {
   cursor: grabbing;
 }
 
+/* ✨ 奥のレイヤー全体のスタイル ✨ */
+.swipe-overlay-layer {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 0;
+  pointer-events: none; /* ドラッグ操作を邪魔しない */
+  display: flex;
+}
+
+/* 左右それぞれの画像表示エリアの共通設定 */
+.overlay-nope,
+.overlay-like {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0; 
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: 80% auto; /* ハートを表示するのは後ろのレイヤー全体 */
+}
+
+/* NOPE（左側：青いハート） */
+.overlay-nope {
+  background-color: rgba(30, 136, 229, 0.08); /* ほんのり青背景 */
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%231E88E5'><path d='M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.5 3 21.9 5.42 21.9 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z'/></svg>");
+}
+
+/* LIKE（右側：赤いハート） */
+.overlay-like {
+  background-color: rgba(255, 74, 125, 0.08); /* ほんのり赤背景 */
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23FF4A7D'><path d='M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.5 3 21.9 5.42 21.9 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z'/></svg>");
+}
+
 .mobile-card-container {
   width: 100%;
-  max-width: 360px;
-  height: 600px; 
+  height: 100%;
   background: #ffffff;
-  border: 1px solid #c8c8c8;
-  border-radius: 24px;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+  border: none;
+  border-radius: 0;
   position: relative;
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  /* カード単体の pointer-events を有効にし、中の個別スクロールを邪魔しないように調整 */
+  z-index: 1; /* 奥のレイヤーより手前に配置 */
   pointer-events: auto;
 }
 
@@ -258,6 +350,7 @@ const getReccomend = async() =>{
   overflow-y: auto;
   padding: 20px;
   scrollbar-width: thin;
+  -webkit-overflow-scrolling: touch;
 }
 
 .profile-main {
@@ -332,6 +425,13 @@ const getReccomend = async() =>{
   word-break: break-word;
 }
 
+.tag-badges-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  justify-content: flex-end;
+}
+
 .font-badge {
   background-color: #e3f2fd;
   color: #1e88e5;
@@ -347,14 +447,25 @@ const getReccomend = async() =>{
   border: 1px solid #dee2e6;
 }
 
-.italic-text {
-  font-style: italic;
-  color: #555;
+.usual-text {
+  width: 100%;
+  white-space: pre-wrap;
+  word-break: break-all;
+  background: #f8f9fa;
+  border: 1px solid #e9ecef;
+  padding: 10px;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  margin-top: 6px;
+  color: #444;
+  line-height: 1.4;
+  box-sizing: border-box;
 }
 
 .bio-text {
   width: 100%;
   white-space: pre-wrap;
+  word-break: break-all;
   background: #f8f9fa;
   border: 1px solid #e9ecef;
   padding: 10px;
@@ -367,6 +478,7 @@ const getReccomend = async() =>{
 }
 
 .no-more-users {
+  z-index: 2;
   text-align: center;
   color: #666;
   padding: 20px;
