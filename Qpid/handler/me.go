@@ -35,6 +35,17 @@ func (h *handler) getMe(c *echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, errorResponse{Message: "user not found"})
 	}
 
+	displayName, err := h.fetchUserDisplayName(*username)
+	if err != nil || displayName == nil {
+		c.Logger().Error(
+			"failed to fetch user display name",
+			slog.String("username", *username),
+			slog.Any("error", err),
+		)
+		return c.JSON(http.StatusInternalServerError, errorResponse{Message: "failed to fetch user display name"})
+	}
+	user.DisplayName = *displayName
+
 	return c.JSON(http.StatusOK, toUserResponse(*user))
 }
 

@@ -109,6 +109,7 @@ func (r *MockRepository) DeleteIcon(username string) error {
 func mockUser(username string) *domain.User {
 	return &domain.User{
 		Username:     username,
+		DisplayName:  "モックユーザー",
 		HasIcon:      false,
 		Major:        optional.None[string](),
 		Affiliations: []domain.UserAffiliation{domain.UserAffiliationSysAd},

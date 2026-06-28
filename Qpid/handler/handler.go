@@ -9,6 +9,7 @@ import (
 	"github.com/gorilla/sessions"
 	"github.com/labstack/echo/v5"
 	echoMiddleware "github.com/labstack/echo/v5/middleware"
+	"github.com/patrickmn/go-cache"
 	"github.com/traP-jp/hackathon26spring_05/Qpid/env"
 	"github.com/traP-jp/hackathon26spring_05/Qpid/handler/middleware"
 	"github.com/traP-jp/hackathon26spring_05/Qpid/infrastructure"
@@ -22,6 +23,7 @@ type handler struct {
 	repository repository.Repository
 	sessions   sessions.Store
 	traq       traqClientWithContext
+	cache      *cache.Cache
 }
 
 type traqClientWithContext struct {
