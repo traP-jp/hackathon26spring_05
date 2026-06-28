@@ -4,7 +4,7 @@
       <!-- 左側：ロゴエリア -->
       <div class="logo">
         <router-link to="/">
-          <span class="logo-icon">🏹</span>
+          <img class="logo-text" src="https://img.icons8.com/?size=40&id=5IeEIBOnAlpA&format=png&color=000000" alt="from Icons8" />
           <span class="logo-text">Qpid</span>
         </router-link>
       </div>
@@ -15,21 +15,21 @@
           <!-- ホーム画面へ -->
           <li>
             <router-link to="/" class="nav-item" title="ホーム">
-              <span class="nav-icon">🏠</span>
+              <img class="logo-text" src="https://img.icons8.com/?size=40&id=14096&format=png&color=000000" alt="from Icons8" />
               <span class="nav-label">ホーム</span>
             </router-link>
           </li>
           <!-- 自己紹介（Myself）画面へ -->
           <li>
             <router-link to="/me" class="nav-item" title="自己紹介">
-              <span class="nav-icon">👤</span>
+              <img class="logo-text" src="https://img.icons8.com/?size=40&id=23264&format=png&color=000000" alt="from Icons8" />
               <span class="nav-label">自己紹介</span>
             </router-link>
           </li>
           <!-- いいねされた人（後で実装用：現状は/#へ） -->
           <li>
             <router-link to="/likes" class="nav-item" title="いいねされた人">
-              <span class="nav-icon">❤️</span>
+              <img class="logo-text" src="https://img.icons8.com/?size=40&id=59789&format=png&color=000000" alt="from Icons8" />
               <span class="nav-label">いいね</span>
             </router-link>
           </li>

@@ -1,12 +1,16 @@
 <script setup lang="ts">
 import Header from './components/Header.vue';
+import { computed } from 'vue';
+import { useRoute } from 'vue-router';
+
+const route = useRoute();
+const isLoginPage = computed(() => route.path === '/login');
 </script>
 
 <template>
   <div class="app-layout">
-    <Header/>
-    <main class="main-content">
-      <router-view />
+  <Header v-if="!isLoginPage" />    <main class="main-content">
+      <router-view :key="$route.fullPath"/>
     </main>
   </div>
 </template>

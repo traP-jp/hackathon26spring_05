@@ -61,6 +61,16 @@ const newTechInput = ref('')
 
 // 変更を保存する（APIを叩く場合はここで行います）
 const saveProfile = () => {
+  // --- ここから追加：タグの文字数制限チェック ---
+  const hasTooLongTool = editForm.value.tool.some(tag => tag.length > 16)
+  const hasTooLongHobby = editForm.value.hobbies.some(tag => tag.length > 16)
+
+  if (hasTooLongTool || hasTooLongHobby) {
+    toast.error('16文字を超えるタグが含まれています。修正してください。')
+    return // 16文字超えがあればここで処理を止めてAPIを叩かせない
+  }
+  // --- ここまで追加 ---
+
   console.log('保存されるデータ:', editForm.value)
   updateMe()
 }
@@ -92,6 +102,11 @@ const removeHobbyTag = (index: number) => {
   editForm.value.hobbies.splice(index, 1)
 }
 
+// 好きな創作ツールの削除
+const removeTechTool = (index: number) => {
+  editForm.value.tool.splice(index, 1)
+}
+
 const getMe = async() => {
   try{
     //const response = await fetch(`https://qpid.trap.show/api/me`,{
@@ -104,10 +119,11 @@ const getMe = async() => {
 
     if(!response.ok){
       console.log("Error : Not OK")
-      editForm.value = { ...editFormDemo.value };
+      const errorText = await response.text();
+      console.log("バックエンドから返ってきた生の文字:", errorText);
+      //editForm.value = { ...editFormDemo.value };
     }
-    // const errorText = await response.text();
-    // console.log("バックエンドから返ってきた生の文字:", errorText);
+
     const userData = await response.json();
     console.log("APIから取得したデータ:", userData)
     editForm.value.id=userData.username;
@@ -132,19 +148,23 @@ const updateMe = async() =>{
       headers:{
         "content-type":"application/json"
       },
-      // body:{
-      //   iconFieldID:null,
-      //   major:editForm.value.faculty,
-      //   affiliations:editForm.value.affiliations,
-      //   hometown:editForm.value.origin,
-      //   tags:editForm.value.hobbies,
-      //   bio:editForm.value.bio,
-      // }
+      // コメントアウトを解除し、JSONに変換してすべての入力データをバックエンドへ送信
+      body: JSON.stringify({
+        iconFieldID: null,
+        major: editForm.value.faculty,
+        affiliations: editForm.value.affiliations,
+        hometown: editForm.value.origin,
+        // 趣味タグと創作ツールを合体してバックエンドのtagsに送る設定
+        tags: [...editForm.value.hobbies, ...editForm.value.tool],
+        status: editForm.value.status, // 普段の様子
+        bio: editForm.value.bio        // 自由記述欄
+      })
     });
 
     if(!response.ok){
       console.log("Error : Not OK")
-      editForm.value = { ...editFormDemo.value };
+      //editForm.value = { ...editFormDemo.value };
+      return;
     }
     // const errorText = await response.text();
     // console.log("バックエンドから返ってきた生の文字:", errorText);
@@ -157,6 +177,7 @@ const updateMe = async() =>{
     editForm.value.affiliations=userData.affiliations;
     console.log(editForm.value);
 
+    toast.success("プロフィールを保存しました！")
     
   }catch(error){
     console.log("Error : ",error)
@@ -251,7 +272,7 @@ onMounted(()=>{
 
               <div class="tags-container">
                 <div v-for="(tag, idx) in editForm.tool" :key="idx" class="tag-item editable">
-                  <span class="btn-remove-tag" @click="removeHobbyTag(idx)">×</span>
+                  <span class="btn-remove-tag" @click="removeTechTool(idx)">×</span>
                   #{{ tag }}
                 </div>
               </div>
@@ -445,6 +466,8 @@ onMounted(()=>{
   display: flex;
   align-items: center;
   gap: 6px;
+  /* 念のための追加：極端に長いタグでもカードを突き破らないように折り返す記述 */
+  word-break: break-all;
 }
 .btn-remove-tag {
   cursor: pointer;
