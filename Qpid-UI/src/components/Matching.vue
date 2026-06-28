@@ -5,17 +5,21 @@ import 'vue3-toastify/dist/index.css';
 
 // 1. ダミーのユーザーデータ（バックエンドと接続するまでの繋ぎ）
 interface UserProfile {
-  id: string
-  name: string
-  department: string
-  faculty: string
-  origin: string
-  like_category: string
-  like_thing: string
-  dislike_category: string
-  dislike_thing: string
-  tool: string
-  hobby: string
+  username: string
+  displayname: string
+  affiliations:string[]
+  major: string
+  hometown: string
+  favoriteTopic:{
+    topic:string,
+    value:string
+  }
+  dislikedTopic:{
+    topic:string,
+    value:string
+  }
+  technologies: string[] 
+  tags: string[]         
   status: string
   bio: string
 }
@@ -69,9 +73,11 @@ const notify = (name: string|undefined, action: string) => {
 }
 
 // アクション処理（バックエンドにデータを送る場合はここで行う）
-const handleAction = (action: 'Like' | 'Nope') => {
+const handleAction = async(action: 'Like' | 'Nope') => {
   //toast.success(`${currentUser.value?.name} さんに 【${action}】 をしました！`)
-  notify(currentUser.value?.name,action);
+  if (!currentUser.value) return;
+  await sendAction(action, currentUser.value.username);
+  notify(currentUser.value?.displayname,action);
 
   
   // 次のユーザーへ（データがなくなったらnull）
@@ -162,14 +168,42 @@ const getReccomendUser = async (userIDs: Array<string>) => {
     // 取得できたユーザーのみを格納 (nullを除外)
     users.value = results.filter((u) => u !== null);
     
+    console.log("[getReccomend]ユーザー取得成功")
     // 最初のユーザーをセット
     if (users.value.length > 0) {
       currentUser.value = users.value[0]??null;
       currentUserIndex.value = 0;
+      console.log("[getReccomend]user info",users.value[0])
     }
-    console.log("[getReccomend]ユーザー取得成功")
   } catch (error) {
     console.error("ユーザー詳細取得エラー:", error);
+  }
+};
+
+const sendAction = async (action: 'Like' | 'Nope', username: string) => {
+  const endpoint = action === 'Like' ? '/api/me/likes' : '/api/me/nopes';
+  
+  try {
+    console.log({username})
+    const response = await fetch(endpoint, {
+      method: 'POST',
+      headers: {
+        'content-type': 'application/json'
+      },
+      body: JSON.stringify({ username: username })
+    });
+
+    if (response.status === 204) {
+      console.log(`${action} 成功: ${username}`);
+      // 成功時の処理（必要に応じてトースト通知など）
+    } else if (response.status === 409) {
+      toast.warn("既にアクション済みです");
+    } else {
+      throw new Error(`アクション失敗: ${response.status}`);
+    }
+  } catch (error) {
+    console.error("通信エラー:", error);
+    toast.error("アクションの送信に失敗しました");
   }
 };
 
@@ -205,40 +239,40 @@ onUnmounted(() => {
       }"
     >  
       <div class="absolute-item pos-department">
-        <span class="label">所属:</span> {{ currentUser.department }}
+        <span class="label">所属:</span> {{ currentUser.affiliations.join(', ') }}
       </div>
 
       <div class="absolute-item pos-origin">
-        <span class="label">出身:</span> {{ currentUser.origin }}
+        <span class="label">出身:</span> {{ currentUser.hometown }}
       </div>
       
       <div class="absolute-item pos-faculty">
-        <span class="label">学部/系:</span> {{ currentUser.faculty }}
+        <span class="label">学部/系:</span> {{ currentUser.major }}
       </div>
       
       <div class="absolute-item pos-like">
-        <span class="label">好きな〇〇:</span> {{ currentUser.like_thing }}
+        <span class="label">好きな{{currentUser.favoriteTopic?.topic}}:</span> {{ currentUser.favoriteTopic?.value }}
       </div>
       
       <div class="absolute-item pos-dislike">
-        <span class="label">嫌いな〇〇:</span> {{ currentUser.dislike_thing }}
+        <span class="label">嫌いな{{currentUser.dislikedTopic?.topic}}:</span> {{ currentUser.dislikedTopic?.value }}
       </div>
 
       <div 
         class="card-center"
       >
         <div class="avatar-box">
-          <img :src="`https://q.trap.jp/api/v3/public/icon/${currentUser.id}`" alt="avatar" class="avatar-img" draggable="false" />
+          <img :src="`https://q.trap.jp/api/v3/public/icon/${currentUser.username}`" alt="avatar" class="avatar-img" draggable="false" />
         </div>
-        <div class="user-name">{{ currentUser.name }} (@{{currentUser.id}})</div>
+        <div class="user-name">{{ currentUser.displayname }} (@{{currentUser.username}})</div>
       </div>
 
       <div class="absolute-item pos-tool">
-        <span class="label">好きな創作ツール:</span> {{ currentUser.tool }}
+        <span class="label">好きな創作ツール:</span> {{ currentUser.technologies?.join(', ') }}
       </div>
       
       <div class="absolute-item pos-hobby">
-        <span class="label">趣味タグ:</span> {{ currentUser.hobby }}
+        <span class="label">趣味:</span> {{ currentUser.tags?.join(', ') }}
       </div>
       
       <div class="absolute-item pos-status">
