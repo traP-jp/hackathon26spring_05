@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
 import { toast } from 'vue3-toastify'
+import { apiFetch } from '../api'
 
 // ユーザーデータの型定義
 interface UserProfile {
@@ -113,7 +114,7 @@ const removeTechTool = (index: number) => {
 const getMe = async() => {
   try{
     //const response = await fetch(`https://qpid.trap.show/api/me`,{
-    const response = await fetch(`/api/me`,{
+    const response = await apiFetch(`/api/me`,{
       method: "GET",
       headers:{
         "content-type":"application/json"
@@ -154,7 +155,7 @@ const getMe = async() => {
 const updateMe = async() =>{
     try{
     //const response = await fetch(`https://qpid.trap.show/api/me`,{
-    const response = await fetch(`/api/me`,{
+    const response = await apiFetch(`/api/me`,{
       method: "PUT",
       headers:{
         "content-type":"application/json"

@@ -4,6 +4,7 @@ import Myself from '../components/Myself.vue'
 import Likes from '../components/Likes.vue'
 import Matching_Base from '../components/Matching_Base.vue'
 import Login from '../components/Login.vue'
+import { apiFetch } from '../api'
 
 
 const routes = [
@@ -25,7 +26,7 @@ router.beforeEach(async (to) => {
   }
 
   try {
-    const response = await fetch('/api/me')
+    const response = await apiFetch('/api/me')
     if (response.status === 401) {
       return {
         path: '/login',

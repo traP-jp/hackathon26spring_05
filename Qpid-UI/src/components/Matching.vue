@@ -2,6 +2,7 @@
 import { ref, onMounted, onUnmounted } from 'vue'
 import { toast } from 'vue3-toastify';
 import 'vue3-toastify/dist/index.css';
+import { apiFetch } from '../api'
 
 interface UserProfile {
   username: string
@@ -97,7 +98,7 @@ const handleKeyDown = (e: KeyboardEvent) => {
 const getReccomend = async() =>{
   try{
     //const response = await fetch(`https://qpid.trap.show/api/me`,{
-    const response = await fetch(`/api/suggestions`,{
+    const response = await apiFetch(`/api/suggestions`,{
       method: "GET",
       headers:{
         "content-type":"application/json"
@@ -124,7 +125,7 @@ const getReccomend = async() =>{
 const getReccomendUser = async (userIDs: Array<string>) => {
   try {
     const userPromises = userIDs.map(async (id) => {
-      const res = await fetch(`/api/users/${id}`);
+      const res = await apiFetch(`/api/users/${id}`);
       if (!res.ok) return null;
       return res.json();
     });
@@ -153,7 +154,7 @@ const sendAction = async (action: 'Like' | 'Nope', username: string) => {
   
   try {
     console.log({username})
-    const response = await fetch(endpoint, {
+    const response = await apiFetch(endpoint, {
       method: 'POST',
       headers: {
         'content-type': 'application/json'

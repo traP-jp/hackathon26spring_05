@@ -21,6 +21,7 @@
 import { ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { toast } from 'vue3-toastify'
+import { apiFetch } from '../api'
 
 const route = useRoute()
 const router = useRouter()
@@ -31,7 +32,7 @@ const handleLogin = async () => {
 
   isSubmitting.value = true
   try {
-    const response = await fetch(`/api/signup`,{
+    const response = await apiFetch(`/api/signup`,{
       method: "POST",
       headers:{
         "content-type":"application/json"
