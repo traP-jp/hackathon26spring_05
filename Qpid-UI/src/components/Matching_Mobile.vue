@@ -199,7 +199,7 @@ const getReccomend = async() =>{
 
           <div class="info-item block-item">
             <span class="label">普段の様子:</span> 
-            <p class="usual-text">“ {{ currentUser.usual_situation }} ”</p>
+            <p class="usual-text">{{ currentUser.usual_situation }}</p>
           </div>
 
           <div class="info-item block-item">
@@ -362,10 +362,10 @@ const getReccomend = async() =>{
   border: 1px solid #e9ecef;
   padding: 10px;
   border-radius: 8px;
-  font-size: 0.95rem;
-  font-style: italic;
+  font-size: 0.9rem; /* bio-text とサイズを揃えました */
+  /* font-style: italic; (削除しました) */
   margin-top: 6px;
-  color: #555;
+  color: #444; /* 文字色も bio-text と統一 */
   line-height: 1.4;
   box-sizing: border-box;
 }
