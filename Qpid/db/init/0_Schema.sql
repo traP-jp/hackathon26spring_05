@@ -22,7 +22,7 @@ CREATE TABLE tools (
   username VARCHAR(36) NOT NULL,
   name VARCHAR(255) NOT NULL,
   PRIMARY KEY (username, name)
-)
+);
 
 CREATE INDEX idx_tool_name ON tools (name);
 
