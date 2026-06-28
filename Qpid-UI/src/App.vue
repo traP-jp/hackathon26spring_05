@@ -10,7 +10,7 @@ const isLoginPage = computed(() => route.path === '/login');
 <template>
   <div class="app-layout">
   <Header v-if="!isLoginPage" />    <main class="main-content">
-      <router-view />
+      <router-view :key="$route.fullPath"/>
     </main>
   </div>
 </template>
