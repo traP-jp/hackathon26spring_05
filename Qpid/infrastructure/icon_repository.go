@@ -1,6 +1,9 @@
 package infrastructure
 
 import (
+	"database/sql"
+	"errors"
+
 	"github.com/traP-jp/hackathon26spring_05/Qpid/domain"
 )
 
@@ -21,7 +24,11 @@ func (r *repositoryImpl) FindIconByUsername(username string) (*domain.Icon, erro
 		"SELECT icon, mime_type FROM icons WHERE username = ? LIMIT 1",
 		username,
 	)
+
 	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, nil
+		}
 		return nil, err
 	}
 
