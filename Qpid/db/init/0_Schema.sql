@@ -16,7 +16,6 @@ CREATE INDEX idx_like_topic ON users (like_topic);
 CREATE INDEX idx_like_value ON users (like_value);
 CREATE INDEX idx_dislike_topic ON users (dislike_topic);
 CREATE INDEX idx_dislike_value ON users (dislike_value);
-CREATE INDEX idx_tool ON users (tool);
 
 CREATE TABLE tools (
   username VARCHAR(36) NOT NULL,
