@@ -147,19 +147,23 @@ const updateMe = async() =>{
       headers:{
         "content-type":"application/json"
       },
-      // body:{
-      //   iconFieldID:null,
-      //   major:editForm.value.faculty,
-      //   affiliations:editForm.value.affiliations,
-      //   hometown:editForm.value.origin,
-      //   tags:editForm.value.hobbies,
-      //   bio:editForm.value.bio,
-      // }
+      // コメントアウトを解除し、JSONに変換してすべての入力データをバックエンドへ送信
+      body: JSON.stringify({
+        iconFieldID: null,
+        major: editForm.value.faculty,
+        affiliations: editForm.value.affiliations,
+        hometown: editForm.value.origin,
+        // 趣味タグと創作ツールを合体してバックエンドのtagsに送る設定
+        tags: [...editForm.value.hobbies, ...editForm.value.tool],
+        status: editForm.value.status, // 普段の様子
+        bio: editForm.value.bio        // 自由記述欄
+      })
     });
 
     if(!response.ok){
       console.log("Error : Not OK")
       editForm.value = { ...editFormDemo.value };
+      return;
     }
     // const errorText = await response.text();
     // console.log("バックエンドから返ってきた生の文字:", errorText);
@@ -172,6 +176,7 @@ const updateMe = async() =>{
     editForm.value.affiliations=userData.affiliations;
     console.log(editForm.value);
 
+    toast.success("プロフィールを保存しました！")
     
   }catch(error){
     console.log("Error : ",error)
