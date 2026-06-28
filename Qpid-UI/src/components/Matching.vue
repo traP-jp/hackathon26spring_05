@@ -212,7 +212,9 @@ onUnmounted(() => {
       </div>
       
       <div class="absolute-item pos-status">
-        <span class="label">普段の様子:</span> {{ currentUser.status }}
+        <span class="label">普段の様子:</span>
+        <p class="bio-text">{{ currentUser.status }}</p>
+
       </div>
       
       <div class="absolute-item pos-bio">
@@ -312,13 +314,14 @@ onUnmounted(() => {
 }
 
 .pos-status {
-  top: 50%;
-  left: 75%;
+  top: 45%;
+  left: 70%;
+  width: 30%;
 }
 
 .pos-bio {
   top: 70%;
-  left: 70%;
+  left: 60%;
   width: 30%;
 }
 
@@ -335,7 +338,8 @@ onUnmounted(() => {
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 5;
   line-clamp: 5;
-  overflow: hidden;
+  height:100px;
+  overflow: auto;
 }
 
 /* --- 中央のアバター（画面のど真ん中に固定） --- */
