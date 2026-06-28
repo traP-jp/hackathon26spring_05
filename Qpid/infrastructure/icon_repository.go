@@ -1,6 +1,8 @@
 package infrastructure
 
-import "github.com/traP-jp/hackathon26spring_05/Qpid/domain"
+import (
+	"github.com/traP-jp/hackathon26spring_05/Qpid/domain"
+)
 
 // アイコン画像を保存する。
 func (r *repositoryImpl) SaveIcon(username string, icon domain.Icon) error {
@@ -9,7 +11,12 @@ func (r *repositoryImpl) SaveIcon(username string, icon domain.Icon) error {
 
 // アイコン画像を取得する。
 func (r *repositoryImpl) FindIconByUsername(username string) (*domain.Icon, error) {
-	return nil, nil
+	var icon *domain.Icon
+	err := r.db.Select(&icon,
+		"SELECT icon LONGBLOB, mime_type FROM icons WHERE username = ? LIMIT 1",
+		username,
+	)
+	return icon, err
 }
 
 // アイコン画像を削除する。
