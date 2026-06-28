@@ -23,7 +23,7 @@ interface UserResponse{
   username:string
 }
 
-// 初期の仮データ
+// 初期データ
 const editForm = ref<UserProfile>({
   id:'',
   name: '',
@@ -100,6 +100,11 @@ const addTechTool = () => {
 // 趣味タグの削除
 const removeHobbyTag = (index: number) => {
   editForm.value.hobbies.splice(index, 1)
+}
+
+// 好きな創作ツールの削除
+const removeTechTool = (index: number) => {
+  editForm.value.tool.splice(index, 1)
 }
 
 const getMe = async() => {
@@ -261,7 +266,7 @@ onMounted(()=>{
 
               <div class="tags-container">
                 <div v-for="(tag, idx) in editForm.tool" :key="idx" class="tag-item editable">
-                  <span class="btn-remove-tag" @click="removeHobbyTag(idx)">×</span>
+                  <span class="btn-remove-tag" @click="removeTechTool(idx)">×</span>
                   #{{ tag }}
                 </div>
               </div>
