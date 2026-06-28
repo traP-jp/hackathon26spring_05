@@ -2,8 +2,8 @@ import { createRouter, createWebHistory } from 'vue-router'
 
 import Myself from '../components/Myself.vue'
 import Likes from '../components/Likes.vue'
-import Matching_Base from '@/components/Matching_Base.vue'
-import Login from '@/components/Login.vue'
+import Matching_Base from '../components/Matching_Base.vue'
+import Login from '../components/Login.vue'
 
 
 const routes = [
@@ -33,8 +33,8 @@ router.beforeEach(async (to, from, next) => {
       next();
     }
   } catch (error) {
-    //next('/login');
-    next();
+    next('/login');
+    //next();
   }
 });
 
