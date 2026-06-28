@@ -1,6 +1,8 @@
 package infrastructure
 
 import (
+	"errors"
+
 	"github.com/traP-jp/hackathon26spring_05/Qpid/domain"
 )
 
@@ -11,7 +13,22 @@ type iconRow struct {
 
 // アイコン画像を保存する。
 func (r *repositoryImpl) SaveIcon(username string, icon domain.Icon) error {
-	_, err := r.db.Exec(
+	var count int
+
+	//ユーザーが存在するかを確認
+	err := r.db.Get(
+		&count,
+		`SELECT COUNT(*) FROM users WHERE username = ?`,
+		username,
+	)
+	if err != nil {
+		return err
+	}
+	if count == 0 {
+		return errors.New("user not found")
+	}
+
+	_, err = r.db.Exec(
 		`INSERT INTO icons (username, icon, mime_type)
 		 VALUES (?, ?, ?)
 		 ON DUPLICATE KEY UPDATE
