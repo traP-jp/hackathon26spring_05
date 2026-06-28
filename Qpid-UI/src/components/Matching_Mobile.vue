@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref } from 'vue'
 import { toast } from 'vue3-toastify';
 import 'vue3-toastify/dist/index.css';
 
@@ -31,7 +31,7 @@ const dummyUsers: UserProfile[] = [
     dislike_value: 'TEX',
     tool: 'Python',
     usual_situation: 'オートマトンおじさん',
-    bio: 'Pythonはいいぞ！\n最近サウンドを始めました',
+    bio: 'Pythonはいいぞ！\n最近サウンドを始めましたあああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああああ',
     tags: ['勉学', 'くねくね', '料理']
   },
   {
@@ -144,7 +144,6 @@ const getReccomend = async() =>{
     @touchmove="touchMove"
     @touchend="touchEnd"
   >
-    <!-- 2. rotate を削除し、真横の平行移動（translateX）のみに変更 -->
     <div 
       v-if="currentUser" 
       class="mobile-card-container"
@@ -220,11 +219,11 @@ const getReccomend = async() =>{
 <style scoped>
 .matching-mobile-screen {
   width: 100%;
-  min-height: calc(100vh - 60px);
+  height: calc(100vh - 60px); /* 100vhに固定してヘッダーを動かさないように指定 */
   display: flex;
   justify-content: center;
   align-items: center;
-  padding: 15px;
+  padding: 0; /* 左右の余白をなくしてスライド全面に広げる */
   background-color: #f8f9fa;
   box-sizing: border-box;
   user-select: none;
@@ -239,12 +238,10 @@ const getReccomend = async() =>{
 
 .mobile-card-container {
   width: 100%;
-  max-width: 360px;
-  height: 600px; 
+  height: 100%; /* 高さを100%にしてグレーの部分いっぱいに広げる */
   background: #ffffff;
-  border: 1px solid #c8c8c8;
-  border-radius: 24px;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+  border: none; /* 外枠の線を削除 */
+  border-radius: 0; /* 角丸を削除して全画面表示に */
   position: relative;
   display: flex;
   flex-direction: column;
@@ -258,6 +255,7 @@ const getReccomend = async() =>{
   overflow-y: auto;
   padding: 20px;
   scrollbar-width: thin;
+  -webkit-overflow-scrolling: touch; /* スムーズなスクロールの有効化 */
 }
 
 .profile-main {
@@ -355,6 +353,7 @@ const getReccomend = async() =>{
 .bio-text {
   width: 100%;
   white-space: pre-wrap;
+  word-break: break-all; /* 👈 英語の横突き抜け防止用にこれだけ足しました */
   background: #f8f9fa;
   border: 1px solid #e9ecef;
   padding: 10px;
