@@ -11,7 +11,17 @@ type iconRow struct {
 
 // アイコン画像を保存する。
 func (r *repositoryImpl) SaveIcon(username string, icon domain.Icon) error {
-	return nil
+	_, err := r.db.Exec(
+		`INSERT INTO icons (username, icon, mime_type)
+		 VALUES (?, ?, ?)
+		 ON DUPLICATE KEY UPDATE
+			icon = VALUES(icon),
+			mime_type = VALUES(mime_type)`,
+		username,
+		icon.Blob,
+		icon.MimeType,
+	)
+	return err
 }
 
 // アイコン画像を取得する。
