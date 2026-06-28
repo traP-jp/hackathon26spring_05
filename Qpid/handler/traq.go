@@ -3,9 +3,11 @@ package handler
 import (
 	"fmt"
 	"log/slog"
+	"strings"
 
 	"github.com/labstack/echo/v5"
 	"github.com/traP-jp/hackathon26spring_05/Qpid/domain"
+	"github.com/traPtitech/go-traq"
 )
 
 var groupAffiliationMap = map[string]domain.UserAffiliation{
@@ -40,24 +42,50 @@ func (h *handler) fetchAffiliations(c *echo.Context, uuid string) []domain.UserA
 	return getAffiliations(groups)
 }
 
-func (h *handler) getUserUUID(username string) (string, error) {
-	if cached, ok := h.uuidCache.Load(username); ok {
-		return cached.(string), nil
+func newTraqAPIClient(host string) *traq.APIClient {
+	cfg := traq.NewConfiguration()
+	cfg.Servers = traq.ServerConfigurations{
+		{URL: traqAPIBaseURL(host)},
+	}
+	return traq.NewAPIClient(cfg)
+}
+
+func traqAPIBaseURL(host string) string {
+	base := strings.TrimRight(host, "/")
+	if strings.HasSuffix(base, "/api/v3") {
+		return base
+	}
+	return base + "/api/v3"
+}
+
+func (h *handler) findTraqUserByUsername(username string) (*traq.User, error) {
+	if cached, ok := h.traqUsers.Load(username); ok {
+		user := cached.(traq.User)
+		return &user, nil
 	}
 	if h.traq.client == nil {
-		return "", nil
+		return nil, nil
 	}
-	users, _, err := h.traq.client.UserAPI.GetUsers(h.traq.context).Name(username).Execute()
+	users, _, err := h.traq.client.UserAPI.GetUsers(h.traq.context).Execute()
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 	for _, u := range users {
 		if u.Name == username {
-			h.uuidCache.Store(username, u.Id)
-			return u.Id, nil
+			h.traqUsers.Store(username, u)
+			user := u
+			return &user, nil
 		}
 	}
-	return "", fmt.Errorf("user not found: %s", username)
+	return nil, fmt.Errorf("user not found: %s", username)
+}
+
+func (h *handler) getUserUUID(username string) (string, error) {
+	user, err := h.findTraqUserByUsername(username)
+	if err != nil || user == nil {
+		return "", err
+	}
+	return user.Id, nil
 }
 
 func (h *handler) getUserGroups(uuid string) ([]string, error) {
