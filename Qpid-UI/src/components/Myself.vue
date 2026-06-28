@@ -61,6 +61,16 @@ const newTechInput = ref('')
 
 // 変更を保存する（APIを叩く場合はここで行います）
 const saveProfile = () => {
+  // --- ここから追加：タグの文字数制限チェック ---
+  const hasTooLongTool = editForm.value.tool.some(tag => tag.length > 16)
+  const hasTooLongHobby = editForm.value.hobbies.some(tag => tag.length > 16)
+
+  if (hasTooLongTool || hasTooLongHobby) {
+    toast.error('16文字を超えるタグが含まれています。修正してください。')
+    return // 16文字超えがあればここで処理を止めてAPIを叩かせない
+  }
+  // --- ここまで追加 ---
+
   console.log('保存されるデータ:', editForm.value)
   updateMe()
 }
@@ -445,6 +455,8 @@ onMounted(()=>{
   display: flex;
   align-items: center;
   gap: 6px;
+  /* 念のための追加：極端に長いタグでもカードを突き破らないように折り返す記述 */
+  word-break: break-all;
 }
 .btn-remove-tag {
   cursor: pointer;
